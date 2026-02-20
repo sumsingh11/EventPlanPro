@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # EventPlanPro
 
 A comprehensive event management web application built with React, Firebase, Redux Toolkit, and Tailwind CSS.
