@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # EventPlanPro
 
 A comprehensive event management web application built with React, Firebase, Redux Toolkit, and Tailwind CSS.
@@ -114,3 +115,6 @@ Educational/Portfolio Project
 
 ---
 
+=======
+# EventPlanPro
+>>>>>>> 9dd5f15fa8208f5c5f038ef8fbc17489ec0fd814
