@@ -6,6 +6,8 @@ import { toggleDarkMode } from '../../store/slices/settingsSlice';
 import { FiMenu, FiX, FiSun, FiMoon, FiLogOut, FiHome, FiSettings, FiShield } from 'react-icons/fi';
 import Button from '../ui/Button';
 
+
+
 const Navbar = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
