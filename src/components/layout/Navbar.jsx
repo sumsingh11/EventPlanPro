@@ -5,6 +5,7 @@ import { signOut } from '../../store/slices/authSlice';
 import { toggleDarkMode } from '../../store/slices/settingsSlice';
 import { FiMenu, FiX, FiSun, FiMoon, FiLogOut, FiHome, FiSettings, FiShield } from 'react-icons/fi';
 import Button from '../ui/Button';
+import Logo from '../ui/Logo';
 
 
 
@@ -32,10 +33,8 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <Link to="/dashboard" className="flex items-center space-x-2">
-                        <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                            EventPlanPro
-                        </div>
+                    <Link to="/dashboard" className="flex items-center">
+                        <Logo size={30} textSize="text-lg" />
                     </Link>
 
 
