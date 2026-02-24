@@ -6,14 +6,16 @@ import { getFirestore } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 
 // Web app's Firebase configuration
+// Note: Firebase client-side API keys are safe to include in source code.
+// Security is enforced by Firebase Security Rules, not by hiding these keys.
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+    apiKey: "AIzaSyAGaPQGhxxDGLIYeBZSjOJNaB3hJBMjPGg",
+    authDomain: "eventplanpro-9b946.firebaseapp.com",
+    projectId: "eventplanpro-9b946",
+    storageBucket: "eventplanpro-9b946.firebasestorage.app",
+    messagingSenderId: "15523434345",
+    appId: "1:15523434345:web:73788651b594e775eeb7f8",
+    measurementId: "G-V118XHKJRW",
 };
 
 // Initialize Firebase
