@@ -6,7 +6,7 @@ import { showNotification } from '../store/slices/notificationSlice';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { validateRequired } from '../utils/validation';
+import { validateRequired, validateFutureDate } from '../utils/validation';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
 
 const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
@@ -16,6 +16,9 @@ const CreateEvent = () => {
     const navigate = useNavigate();
     const { userData } = useSelector(state => state.auth);
 
+    // Today's date in YYYY-MM-DD for the date input min attribute
+    const today = new Date().toISOString().split('T')[0];
+
     const [formData, setFormData] = useState({
         name: '',
         type: 'Birthday',
@@ -23,6 +26,7 @@ const CreateEvent = () => {
         time: '',
         location: '',
         description: '',
+        rules: '',
         guestLimit: '',
         budgetLimit: '',
     });
@@ -41,8 +45,15 @@ const CreateEvent = () => {
     const validate = () => {
         const newErrors = {};
         if (!validateRequired(formData.name)) newErrors.name = 'Event name is required';
-        if (!validateRequired(formData.date)) newErrors.date = 'Event date is required';
+        if (!validateRequired(formData.date)) {
+            newErrors.date = 'Event date is required';
+        } else if (!validateFutureDate(formData.date)) {
+            newErrors.date = 'Event date must be in the future';
+        }
         if (!validateRequired(formData.time)) newErrors.time = 'Event time is required';
+        if (!validateRequired(formData.guestLimit)) {
+            newErrors.guestLimit = 'Venue capacity is required';
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -101,7 +112,21 @@ const CreateEvent = () => {
 
                     {/* Date & Time */}
                     <div className="grid md:grid-cols-2 gap-4">
-                        <Input label="Date" type="date" name="date" value={formData.date} onChange={handleChange} error={errors.date} required />
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Date <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                name="date"
+                                value={formData.date}
+                                onChange={handleChange}
+                                min={today}
+                                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                                    }`}
+                            />
+                            {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
+                        </div>
                         <Input label="Time" type="time" name="time" value={formData.time} onChange={handleChange} error={errors.time} required />
                     </div>
 
@@ -130,17 +155,39 @@ const CreateEvent = () => {
                         />
                     </div>
 
-                    {/* Guest & Budget Limits */}
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <Input
-                            label="Guest Limit"
-                            type="number"
-                            name="guestLimit"
-                            value={formData.guestLimit}
+                    {/* Rules */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Rules / Guidelines
+                        </label>
+                        <textarea
+                            name="rules"
+                            value={formData.rules}
                             onChange={handleChange}
-                            placeholder="100"
-                            min="1"
+                            rows={2}
+                            placeholder="e.g., Dress code, parking info, dietary restrictions..."
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
                         />
+                    </div>
+
+                    {/* Venue Capacity & Budget Limit */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Venue Capacity <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                name="guestLimit"
+                                value={formData.guestLimit}
+                                onChange={handleChange}
+                                placeholder="100"
+                                min="1"
+                                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.guestLimit ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                                    }`}
+                            />
+                            {errors.guestLimit && <p className="text-red-500 text-xs mt-1">{errors.guestLimit}</p>}
+                        </div>
                         <Input
                             label="Budget Limit ($)"
                             type="number"

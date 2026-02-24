@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { getEvent, updateEvent } from '../services/eventService';
+import { updateEventStatus } from '../store/slices/eventSlice';
 import { fetchEventGuests, clearGuests } from '../store/slices/guestSlice';
 import { fetchEventTasks, clearTasks } from '../store/slices/taskSlice';
 import { fetchEventBudget, clearBudget } from '../store/slices/budgetSlice';
@@ -11,12 +12,20 @@ import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign } from 'react-icons/fi';
+import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import GuestList from '../components/guest/GuestList';
 import TaskList from '../components/task/TaskList';
 import BudgetOverview from '../components/budget/BudgetOverview';
 import { formatDate } from '../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
+
+const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
+
+const STATUS_LABELS = {
+    active: { label: 'Active', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300' },
+    completed: { label: 'Completed', bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300' },
+    cancelled: { label: 'Cancelled', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300' },
+};
 
 const EventDetail = () => {
     const { eventId } = useParams();
@@ -29,12 +38,11 @@ const EventDetail = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState({});
+    const [statusModal, setStatusModal] = useState({ open: false, newStatus: null });
 
     useEffect(() => {
         loadEventData();
-
         return () => {
-            // Cleanup
             dispatch(clearGuests());
             dispatch(clearTasks());
             dispatch(clearBudget());
@@ -47,8 +55,6 @@ const EventDetail = () => {
             const eventData = await getEvent(eventId);
             setEvent(eventData);
             setFormData(eventData);
-
-            // Load related data
             dispatch(fetchEventGuests(eventId));
             dispatch(fetchEventTasks(eventId));
             dispatch(fetchEventBudget(eventId));
@@ -60,9 +66,7 @@ const EventDetail = () => {
         }
     };
 
-    const handleEdit = () => {
-        setEditMode(true);
-    };
+    const handleEdit = () => setEditMode(true);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -77,6 +81,20 @@ const EventDetail = () => {
             dispatch(showNotification(SUCCESS_MESSAGES.EVENT_UPDATED, 'success'));
         } catch (error) {
             dispatch(showNotification('Failed to update event', 'error'));
+        }
+    };
+
+    const handleStatusChange = async () => {
+        const { newStatus } = statusModal;
+        setStatusModal({ open: false, newStatus: null });
+        try {
+            const result = await dispatch(updateEventStatus(eventId, newStatus));
+            if (result.success) {
+                setEvent(prev => ({ ...prev, status: newStatus }));
+                dispatch(showNotification(`Event marked as ${newStatus}`, 'success'));
+            }
+        } catch (err) {
+            dispatch(showNotification('Failed to update status', 'error'));
         }
     };
 
@@ -100,6 +118,9 @@ const EventDetail = () => {
         { id: 'budget', label: 'Budget', icon: FiDollarSign },
     ];
 
+    const currentStatus = event.status || 'active';
+    const statusBadge = STATUS_LABELS[currentStatus] || STATUS_LABELS.active;
+
     return (
         <div>
             {/* Header */}
@@ -114,37 +135,76 @@ const EventDetail = () => {
                     Back to Dashboard
                 </Button>
 
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                            {event.name}
-                        </h1>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                                {event.name}
+                            </h1>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}>
+                                {statusBadge.label}
+                            </span>
+                        </div>
                         <p className="text-gray-600 dark:text-gray-400">
                             {event.type} • {formatDate(event.date)}
                         </p>
                     </div>
 
-                    {activeTab === 'overview' && !editMode && (
-                        <Button variant="primary" onClick={handleEdit} className="flex items-center gap-2">
-                            <FiEdit size={16} />
-                            Edit Event
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Status action buttons */}
+                        {currentStatus === 'active' && (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    size="small"
+                                    onClick={() => setStatusModal({ open: true, newStatus: 'completed' })}
+                                    className="flex items-center gap-1"
+                                >
+                                    <FiCheckCircle size={14} />
+                                    Mark Completed
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="small"
+                                    onClick={() => setStatusModal({ open: true, newStatus: 'cancelled' })}
+                                    className="flex items-center gap-1 text-red-600 dark:text-red-400"
+                                >
+                                    <FiXCircle size={14} />
+                                    Cancel Event
+                                </Button>
+                            </>
+                        )}
+                        {(currentStatus === 'completed' || currentStatus === 'cancelled') && (
+                            <Button
+                                variant="secondary"
+                                size="small"
+                                onClick={() => setStatusModal({ open: true, newStatus: 'active' })}
+                                className="flex items-center gap-1"
+                            >
+                                Reactivate
+                            </Button>
+                        )}
+
+                        {activeTab === 'overview' && !editMode && currentStatus === 'active' && (
+                            <Button variant="primary" onClick={handleEdit} className="flex items-center gap-2">
+                                <FiEdit size={16} />
+                                Edit Event
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 
-
-
             {/* Tabs */}
             <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-                <div className="flex space-x-8">
+                <div className="flex space-x-8 overflow-x-auto">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
+                                className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
                                     ? 'border-primary-600 text-primary-600 dark:text-primary-400'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }`}
@@ -181,31 +241,13 @@ const EventDetail = () => {
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                                     >
-                                        <option value="Birthday">Birthday</option>
-                                        <option value="Wedding">Wedding</option>
-                                        <option value="Anniversary">Anniversary</option>
-                                        <option value="Corporate Event">Corporate Event</option>
-                                        <option value="Party">Party</option>
-                                        <option value="Other">Other</option>
+                                        {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    <Input
-                                        label="Date"
-                                        type="date"
-                                        name="date"
-                                        value={formData.date}
-                                        onChange={handleChange}
-                                    />
-
-                                    <Input
-                                        label="Time"
-                                        type="time"
-                                        name="time"
-                                        value={formData.time}
-                                        onChange={handleChange}
-                                    />
+                                    <Input label="Date" type="date" name="date" value={formData.date} onChange={handleChange} />
+                                    <Input label="Time" type="time" name="time" value={formData.time} onChange={handleChange} />
                                 </div>
 
                                 <Input
@@ -216,9 +258,7 @@ const EventDetail = () => {
                                 />
 
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Description
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                                     <textarea
                                         name="description"
                                         value={formData.description || ''}
@@ -229,17 +269,28 @@ const EventDetail = () => {
                                     />
                                 </div>
 
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rules / Guidelines</label>
+                                    <textarea
+                                        name="rules"
+                                        value={formData.rules || ''}
+                                        onChange={handleChange}
+                                        rows={2}
+                                        placeholder="e.g., Dress code, parking info..."
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+                                    />
+                                </div>
+
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <Input
-                                        label="Guest Limit"
+                                        label="Venue Capacity"
                                         type="number"
                                         name="guestLimit"
                                         value={formData.guestLimit || ''}
                                         onChange={handleChange}
                                     />
-
                                     <Input
-                                        label="Budget Limit"
+                                        label="Budget Limit ($)"
                                         type="number"
                                         name="budgetLimit"
                                         value={formData.budgetLimit || ''}
@@ -250,19 +301,12 @@ const EventDetail = () => {
                                 <div className="flex gap-4 mt-6">
                                     <Button
                                         variant="secondary"
-                                        onClick={() => {
-                                            setEditMode(false);
-                                            setFormData(event);
-                                        }}
+                                        onClick={() => { setEditMode(false); setFormData(event); }}
                                         fullWidth
                                     >
                                         Cancel
                                     </Button>
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleSave}
-                                        fullWidth
-                                    >
+                                    <Button variant="primary" onClick={handleSave} fullWidth>
                                         Save Changes
                                     </Button>
                                 </div>
@@ -279,7 +323,6 @@ const EventDetail = () => {
                                         <p className="text-sm text-gray-600 dark:text-gray-400">Type</p>
                                         <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{event.type}</p>
                                     </div>
-
                                     <div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">Date & Time</p>
                                         <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -302,14 +345,18 @@ const EventDetail = () => {
                                     </div>
                                 )}
 
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {event.guestLimit && (
-                                        <div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Guest Limit</p>
-                                            <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{event.guestLimit}</p>
-                                        </div>
-                                    )}
+                                {event.rules && (
+                                    <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Rules / Guidelines</p>
+                                        <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{event.rules}</p>
+                                    </div>
+                                )}
 
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Venue Capacity</p>
+                                        <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{event.guestLimit || '—'}</p>
+                                    </div>
                                     {event.budgetLimit && (
                                         <div>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">Budget Limit</p>
@@ -322,10 +369,31 @@ const EventDetail = () => {
                     </Card>
                 )}
 
-                {activeTab === 'guests' && <GuestList eventId={eventId} />}
+                {activeTab === 'guests' && <GuestList eventId={eventId} venueCapacity={event.guestLimit} eventName={event.name} />}
                 {activeTab === 'tasks' && <TaskList eventId={eventId} />}
                 {activeTab === 'budget' && <BudgetOverview eventId={eventId} />}
             </div>
+
+            {/* Status Change Confirmation Modal */}
+            <Modal
+                isOpen={statusModal.open}
+                onClose={() => setStatusModal({ open: false, newStatus: null })}
+                title={`Mark as ${statusModal.newStatus === 'completed' ? 'Completed' : statusModal.newStatus === 'cancelled' ? 'Cancelled' : 'Active'}?`}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setStatusModal({ open: false, newStatus: null })}>Cancel</Button>
+                        <Button variant="primary" onClick={handleStatusChange}>Confirm</Button>
+                    </>
+                }
+            >
+                <p className="text-gray-700 dark:text-gray-300">
+                    {statusModal.newStatus === 'completed'
+                        ? 'This event will be moved to your History tab. You can reactivate it later.'
+                        : statusModal.newStatus === 'cancelled'
+                            ? 'This event will be marked as cancelled and moved to History. You can reactivate it later.'
+                            : 'This event will be moved back to Active events.'}
+                </p>
+            </Modal>
         </div>
     );
 };

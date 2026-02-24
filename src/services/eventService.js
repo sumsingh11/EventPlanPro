@@ -22,6 +22,7 @@ export const createEvent = async (eventData, userId) => {
             ...eventData,
             userId,
             eventId: '', // Will be updated with doc ID
+            status: eventData.status || 'active',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });

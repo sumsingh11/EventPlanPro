@@ -8,8 +8,9 @@ const initialState = {
     error: null,
     searchQuery: '',
     filterType: 'all',
-    sortBy: 'date', // 'date', 'name'
-    sortOrder: 'asc', // 'asc', 'desc'
+    statusFilter: 'active', // 'active', 'completed', 'cancelled'
+    sortBy: 'date',
+    sortOrder: 'asc',
 };
 
 const eventSlice = createSlice({
@@ -29,7 +30,7 @@ const eventSlice = createSlice({
         updateEventInState: (state, action) => {
             const index = state.events.findIndex(e => e.id === action.payload.id);
             if (index !== -1) {
-                state.events[index] = action.payload;
+                state.events[index] = { ...state.events[index], ...action.payload };
             }
         },
         removeEvent: (state, action) => {
@@ -47,6 +48,9 @@ const eventSlice = createSlice({
         },
         setFilterType: (state, action) => {
             state.filterType = action.payload;
+        },
+        setStatusFilter: (state, action) => {
+            state.statusFilter = action.payload;
         },
         setSortBy: (state, action) => {
             state.sortBy = action.payload;
@@ -67,6 +71,7 @@ export const {
     setError,
     setSearchQuery,
     setFilterType,
+    setStatusFilter,
     setSortBy,
     setSortOrder,
 } = eventSlice.actions;
@@ -87,7 +92,7 @@ export const fetchEvents = (userId) => async (dispatch) => {
 export const addNewEvent = (eventData, userId) => async (dispatch) => {
     try {
         const result = await createEvent(eventData, userId);
-        const newEvent = { ...eventData, id: result.id, eventId: result.id };
+        const newEvent = { ...eventData, id: result.id, eventId: result.id, status: 'active' };
         dispatch(addEvent(newEvent));
         return { success: true, id: result.id };
     } catch (error) {
@@ -100,6 +105,17 @@ export const modifyEvent = (eventId, eventData) => async (dispatch) => {
     try {
         await updateEvent(eventId, eventData);
         dispatch(updateEventInState({ id: eventId, ...eventData }));
+        return { success: true };
+    } catch (error) {
+        dispatch(setError(error.message));
+        return { success: false, error: error.message };
+    }
+};
+
+export const updateEventStatus = (eventId, status) => async (dispatch) => {
+    try {
+        await updateEvent(eventId, { status });
+        dispatch(updateEventInState({ id: eventId, status }));
         return { success: true };
     } catch (error) {
         dispatch(setError(error.message));
@@ -123,6 +139,7 @@ export const duplicateEvent = (eventData, userId) => async (dispatch) => {
         const newEventData = {
             ...eventData,
             name: `${eventData.name} (Copy)`,
+            status: 'active',
         };
         delete newEventData.id;
         delete newEventData.eventId;
@@ -143,6 +160,15 @@ export const duplicateEvent = (eventData, userId) => async (dispatch) => {
 export const selectFilteredEvents = (state) => {
     let filtered = [...state.events.events];
 
+    // Apply status filter
+    if (state.events.statusFilter && state.events.statusFilter !== 'all') {
+        if (state.events.statusFilter === 'history') {
+            filtered = filtered.filter(e => e.status === 'completed' || e.status === 'cancelled');
+        } else {
+            filtered = filtered.filter(e => (e.status || 'active') === state.events.statusFilter);
+        }
+    }
+
     // Apply search
     if (state.events.searchQuery) {
         filtered = filtered.filter(event =>
@@ -150,7 +176,7 @@ export const selectFilteredEvents = (state) => {
         );
     }
 
-    // Apply filter
+    // Apply type filter
     if (state.events.filterType !== 'all') {
         filtered = filtered.filter(event => event.type === state.events.filterType);
     }
@@ -171,5 +197,12 @@ export const selectFilteredEvents = (state) => {
 
     return filtered;
 };
+
+// Count selectors for dashboard stats
+export const selectActiveEventCount = (state) =>
+    state.events.events.filter(e => (e.status || 'active') === 'active').length;
+
+export const selectHistoryEventCount = (state) =>
+    state.events.events.filter(e => e.status === 'completed' || e.status === 'cancelled').length;
 
 export default eventSlice.reducer;
