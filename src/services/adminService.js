@@ -1,4 +1,4 @@
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 // Get all users (admin only)
@@ -9,7 +9,6 @@ export const getAllUsers = async () => {
         querySnapshot.forEach((doc) => {
             users.push({ id: doc.id, ...doc.data() });
         });
-
         return users;
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -17,10 +16,33 @@ export const getAllUsers = async () => {
     }
 };
 
+// Update a user's role (admin only)
+export const updateUserRole = async (userId, newRole) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, { role: newRole });
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+    }
+};
+
+// Delete a user document from Firestore (admin only)
+// Note: This removes the Firestore record only. Firebase Auth account stays.
+export const deleteUserAccount = async (userId) => {
+    try {
+        await deleteDoc(doc(db, 'users', userId));
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        throw error;
+    }
+};
+
 // Get system-wide statistics (admin only)
 export const getSystemStats = async () => {
     try {
-        // Get counts from all collections
         const [usersSnap, eventsSnap, guestsSnap, tasksSnap, budgetsSnap, expensesSnap] = await Promise.all([
             getDocs(collection(db, 'users')),
             getDocs(collection(db, 'events')),
@@ -30,7 +52,6 @@ export const getSystemStats = async () => {
             getDocs(collection(db, 'expenses')),
         ]);
 
-        // Calculate total budget and expenses
         let totalBudget = 0;
         let totalExpenses = 0;
 
@@ -52,6 +73,21 @@ export const getSystemStats = async () => {
         };
     } catch (error) {
         console.error('Error fetching system stats:', error);
+        throw error;
+    }
+};
+
+// Get all events across all users (admin only)
+export const getAllEvents = async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, 'events'));
+        const events = [];
+        querySnapshot.forEach((doc) => {
+            events.push({ id: doc.id, ...doc.data() });
+        });
+        return events;
+    } catch (error) {
+        console.error('Error fetching all events:', error);
         throw error;
     }
 };

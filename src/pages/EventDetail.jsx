@@ -145,8 +145,8 @@ const EventDetail = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                                        ? 'border-primary-600 text-primary-600 dark:text-primary-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                    ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }`}
                             >
                                 <Icon size={18} />
@@ -215,6 +215,20 @@ const EventDetail = () => {
                                     onChange={handleChange}
                                 />
 
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        name="description"
+                                        value={formData.description || ''}
+                                        onChange={handleChange}
+                                        rows={3}
+                                        placeholder="Add any notes or details..."
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+                                    />
+                                </div>
+
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <Input
                                         label="Guest Limit"
@@ -278,6 +292,13 @@ const EventDetail = () => {
                                     <div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">Location</p>
                                         <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{event.location}</p>
+                                    </div>
+                                )}
+
+                                {event.description && (
+                                    <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Description</p>
+                                        <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{event.description}</p>
                                     </div>
                                 )}
 

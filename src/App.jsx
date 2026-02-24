@@ -18,6 +18,7 @@ import CreateEvent from './pages/CreateEvent';
 import EventDetail from './pages/EventDetail';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
+import NotFound from './pages/NotFound';
 
 function App() {
   const dispatch = useDispatch();
@@ -85,9 +86,7 @@ function App() {
         <Route path="/" element={
           <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
         } />
-        <Route path="*" element={
-          <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
-        } />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

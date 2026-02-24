@@ -6,9 +6,10 @@ import { showNotification } from '../store/slices/notificationSlice';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { validateRequired, validateFutureDate } from '../utils/validation';
-import { formatDateForInput } from '../utils/dateUtils';
+import { validateRequired } from '../utils/validation';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
+
+const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
 
 const CreateEvent = () => {
     const dispatch = useDispatch();
@@ -21,6 +22,7 @@ const CreateEvent = () => {
         date: '',
         time: '',
         location: '',
+        description: '',
         guestLimit: '',
         budgetLimit: '',
     });
@@ -38,26 +40,15 @@ const CreateEvent = () => {
 
     const validate = () => {
         const newErrors = {};
-
-        if (!validateRequired(formData.name)) {
-            newErrors.name = 'Event name is required';
-        }
-
-        if (!validateRequired(formData.date)) {
-            newErrors.date = 'Event date is required';
-        }
-
-        if (!validateRequired(formData.time)) {
-            newErrors.time = 'Event time is required';
-        }
-
+        if (!validateRequired(formData.name)) newErrors.name = 'Event name is required';
+        if (!validateRequired(formData.date)) newErrors.date = 'Event date is required';
+        if (!validateRequired(formData.time)) newErrors.time = 'Event time is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validate()) return;
 
         setLoading(true);
@@ -75,16 +66,13 @@ const CreateEvent = () => {
     return (
         <div className="max-w-2xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                    Create New Event
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                    Fill in the details for your event
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">Create New Event</h1>
+                <p className="text-gray-500 dark:text-gray-400">Fill in the details for your event</p>
             </div>
 
             <Card>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="space-y-1">
+                    {/* Event Name */}
                     <Input
                         label="Event Name"
                         type="text"
@@ -96,6 +84,7 @@ const CreateEvent = () => {
                         required
                     />
 
+                    {/* Event Type */}
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Event Type <span className="text-red-500">*</span>
@@ -106,37 +95,17 @@ const CreateEvent = () => {
                             onChange={handleChange}
                             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         >
-                            <option value="Birthday">Birthday</option>
-                            <option value="Wedding">Wedding</option>
-                            <option value="Anniversary">Anniversary</option>
-                            <option value="Corporate Event">Corporate Event</option>
-                            <option value="Party">Party</option>
-                            <option value="Other">Other</option>
+                            {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
 
+                    {/* Date & Time */}
                     <div className="grid md:grid-cols-2 gap-4">
-                        <Input
-                            label="Date"
-                            type="date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleChange}
-                            error={errors.date}
-                            required
-                        />
-
-                        <Input
-                            label="Time"
-                            type="time"
-                            name="time"
-                            value={formData.time}
-                            onChange={handleChange}
-                            error={errors.time}
-                            required
-                        />
+                        <Input label="Date" type="date" name="date" value={formData.date} onChange={handleChange} error={errors.date} required />
+                        <Input label="Time" type="time" name="time" value={formData.time} onChange={handleChange} error={errors.time} required />
                     </div>
 
+                    {/* Location */}
                     <Input
                         label="Location"
                         type="text"
@@ -146,6 +115,22 @@ const CreateEvent = () => {
                         placeholder="123 Main St, City, State"
                     />
 
+                    {/* Description */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Description
+                        </label>
+                        <textarea
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            rows={3}
+                            placeholder="Add any notes or details about your event..."
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+                        />
+                    </div>
+
+                    {/* Guest & Budget Limits */}
                     <div className="grid md:grid-cols-2 gap-4">
                         <Input
                             label="Guest Limit"
@@ -156,9 +141,8 @@ const CreateEvent = () => {
                             placeholder="100"
                             min="1"
                         />
-
                         <Input
-                            label="Budget Limit"
+                            label="Budget Limit ($)"
                             type="number"
                             name="budgetLimit"
                             value={formData.budgetLimit}
@@ -169,21 +153,12 @@ const CreateEvent = () => {
                         />
                     </div>
 
-                    <div className="flex gap-4 mt-6">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => navigate('/dashboard')}
-                            fullWidth
-                        >
+                    {/* Actions */}
+                    <div className="flex gap-4 pt-4">
+                        <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')} fullWidth>
                             Cancel
                         </Button>
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            fullWidth
-                            disabled={loading}
-                        >
+                        <Button type="submit" variant="primary" fullWidth disabled={loading}>
                             {loading ? 'Creating...' : 'Create Event'}
                         </Button>
                     </div>
