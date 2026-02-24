@@ -20,7 +20,7 @@ A comprehensive event management web application built with React, Firebase, Red
 
 - Node.js (v16+)
 - npm or yarn
-- Firebase account
+- Firebase Console account
 
 ### Installation
 
