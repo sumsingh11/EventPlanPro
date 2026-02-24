@@ -22,6 +22,7 @@ import Modal from '../components/ui/Modal';
 import { FiPlus, FiCalendar, FiMapPin, FiUsers, FiDollarSign, FiEdit, FiTrash2, FiCopy, FiSearch, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import { formatDate, getCountdown } from '../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
+import { getAnnouncement } from '../services/announcementService';
 
 const STATUS_BADGES = {
     active: { label: 'Active', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', icon: FiClock },
@@ -40,15 +41,16 @@ const Dashboard = () => {
     const { loading, searchQuery, filterType, statusFilter } = useSelector(state => state.events);
 
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, eventId: null, eventName: '' });
-
-    // Guest counts per event for summary display
     const [eventGuestCounts, setEventGuestCounts] = useState({});
+    const [announcement, setAnnouncementData] = useState(null);
 
     useEffect(() => {
         if (userData?.userId) {
             dispatch(fetchEvents(userData.userId));
             loadGuestCounts();
         }
+        // Load system announcement
+        getAnnouncement().then(ann => { if (ann) setAnnouncementData(ann); }).catch(() => { });
     }, [dispatch, userData]);
 
     const loadGuestCounts = async () => {
@@ -99,6 +101,17 @@ const Dashboard = () => {
 
     return (
         <div>
+            {/* System Announcement Banner */}
+            {announcement && (
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-3">
+                    <span className="text-blue-500 text-lg">📢</span>
+                    <div>
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">System Announcement</p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mt-0.5">{announcement.message}</p>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">

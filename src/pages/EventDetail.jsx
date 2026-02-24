@@ -12,7 +12,7 @@ import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter } from 'react-icons/fi';
 import GuestList from '../components/guest/GuestList';
 import TaskList from '../components/task/TaskList';
 import BudgetOverview from '../components/budget/BudgetOverview';
@@ -151,6 +151,16 @@ const EventDetail = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
+                        {/* Print Summary */}
+                        <Button
+                            variant="secondary"
+                            size="small"
+                            onClick={() => window.print()}
+                            className="flex items-center gap-1 print:hidden"
+                        >
+                            <FiPrinter size={14} />
+                            Print Summary
+                        </Button>
                         {/* Status action buttons */}
                         {currentStatus === 'active' && (
                             <>

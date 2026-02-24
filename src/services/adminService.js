@@ -91,3 +91,47 @@ export const getAllEvents = async () => {
         throw error;
     }
 };
+
+// Admin delete any event
+export const adminDeleteEvent = async (eventId) => {
+    try {
+        await deleteDoc(doc(db, 'events', eventId));
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting event:', error);
+        throw error;
+    }
+};
+
+// Export system-wide report as CSV
+export const exportSystemReport = async () => {
+    const [usersSnap, eventsSnap] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'events')),
+    ]);
+
+    let csv = 'SYSTEM REPORT\n\n';
+
+    csv += 'USERS\nName,Email,Role,Joined\n';
+    usersSnap.forEach((d) => {
+        const u = d.data();
+        const joined = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : '';
+        csv += `"${u.firstName || ''} ${u.lastName || ''}","${u.email || ''}","${u.role || 'user'}","${joined}"\n`;
+    });
+
+    csv += '\nEVENTS\nName,Type,Date,Location,Status,Owner\n';
+    eventsSnap.forEach((d) => {
+        const e = d.data();
+        csv += `"${e.name || ''}","${e.type || ''}","${e.date || ''}","${e.location || ''}","${e.status || 'active'}","${e.userId || ''}"\n`;
+    });
+
+    // Trigger download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `system_report_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
