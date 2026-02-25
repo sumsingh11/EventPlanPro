@@ -15,7 +15,7 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
-import { FiPlus, FiEdit, FiTrash2, FiMail, FiAlertTriangle } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiMail, FiAlertTriangle, FiSend } from 'react-icons/fi';
 import { validateEmail, validateRequired } from '../../utils/validation';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../utils/notifications';
 
@@ -112,6 +112,12 @@ const GuestList = ({ eventId, venueCapacity, eventName }) => {
         setDeleteModal({ isOpen: false, guestId: null, guestName: '' });
     };
 
+    const handleEmailGuest = (guest) => {
+        const subject = encodeURIComponent(`Invitation: ${eventName || 'Your Event'}`);
+        const body = encodeURIComponent(`Hi ${guest.firstName},\n\nYou are invited to ${eventName || 'our event'}!\n\nPlease update your RSVP status.\n\nThank you!`);
+        window.open(`mailto:${guest.email}?subject=${subject}&body=${body}`, '_self');
+    };
+
     const handleEmailAll = () => {
         if (allGuests.length === 0) {
             dispatch(showNotification('No guests to email', 'info'));
@@ -177,8 +183,13 @@ const GuestList = ({ eventId, venueCapacity, eventName }) => {
                 {capacity && (
                     <div>
                         <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                            <span>{guestCount} / {capacity} capacity</span>
-                            <span>{Math.round(capacityPercent)}%</span>
+                            <span><strong>{guestCount}</strong> invited / <strong>{capacity}</strong> capacity</span>
+                            <span>
+                                {isOverCapacity
+                                    ? <span className="text-red-500 font-medium">Over by {guestCount - capacity}</span>
+                                    : <span className="text-green-600 dark:text-green-400">Room for {capacity - guestCount} more</span>
+                                }
+                            </span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
@@ -237,27 +248,36 @@ const GuestList = ({ eventId, venueCapacity, eventName }) => {
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${guest.rsvpStatus === 'Attending' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
-                                                guest.rsvpStatus === 'Not Attending' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-                                                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                                            guest.rsvpStatus === 'Not Attending' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                                                'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                                             }`}>
                                             {guest.rsvpStatus}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-right text-sm space-x-2">
-                                        <button
-                                            onClick={() => handleEdit(guest)}
-                                            className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                                            title="Edit guest"
-                                        >
-                                            <FiEdit size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => setDeleteModal({ isOpen: true, guestId: guest.id, guestName: `${guest.firstName} ${guest.lastName}` })}
-                                            className="text-red-600 hover:text-red-700 dark:text-red-400"
-                                            title="Remove guest"
-                                        >
-                                            <FiTrash2 size={16} />
-                                        </button>
+                                    <td className="px-4 py-3 text-right text-sm">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <button
+                                                onClick={() => handleEmailGuest(guest)}
+                                                className="p-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                title={`Email ${guest.firstName}`}
+                                            >
+                                                <FiSend size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleEdit(guest)}
+                                                className="p-1.5 text-primary-600 hover:text-primary-700 dark:text-primary-400 rounded"
+                                                title="Edit guest"
+                                            >
+                                                <FiEdit size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteModal({ isOpen: true, guestId: guest.id, guestName: `${guest.firstName} ${guest.lastName}` })}
+                                                className="p-1.5 text-red-600 hover:text-red-700 dark:text-red-400 rounded"
+                                                title="Remove guest"
+                                            >
+                                                <FiTrash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

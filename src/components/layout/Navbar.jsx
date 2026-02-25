@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { signOut } from '../../store/slices/authSlice';
 import { toggleDarkMode } from '../../store/slices/settingsSlice';
-import { FiMenu, FiX, FiSun, FiMoon, FiLogOut, FiHome, FiSettings, FiShield } from 'react-icons/fi';
+import { getAnnouncement } from '../../services/announcementService';
+import { FiMenu, FiX, FiSun, FiMoon, FiLogOut, FiHome, FiSettings, FiShield, FiBell } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Logo from '../ui/Logo';
 
@@ -13,9 +14,20 @@ const Navbar = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [hasUnread, setHasUnread] = useState(false);
 
     const { userData, isAuthenticated } = useSelector(state => state.auth);
     const darkMode = useSelector(state => state.settings.darkMode);
+
+    // Check for unread announcement
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        getAnnouncement().then(ann => {
+            if (!ann) return;
+            const read = localStorage.getItem('eventplanpro_inbox_read');
+            setHasUnread(read !== ann.updatedAt);
+        }).catch(() => { });
+    }, [isAuthenticated]);
 
     const handleLogout = async () => {
         await dispatch(signOut());
@@ -59,14 +71,19 @@ const Navbar = () => {
                             </Link>
 
                             {isAdmin && (
-                                <Link
-                                    to="/admin"
-                                    className="flex items-center space-x-1 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                >
+                                <Link to="/admin" className="flex items-center space-x-1 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                     <FiShield size={18} />
                                     <span>Admin</span>
                                 </Link>
                             )}
+
+                            {/* Inbox Bell */}
+                            <Link to="/inbox" className="relative p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Inbox">
+                                <FiBell size={20} />
+                                {hasUnread && (
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                                )}
+                            </Link>
 
                             <button
                                 onClick={handleToggleDarkMode}
@@ -132,15 +149,19 @@ const Navbar = () => {
                         </Link>
 
                         {isAdmin && (
-                            <Link
-                                to="/admin"
-                                className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
+                            <Link to="/admin" className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setMobileMenuOpen(false)}>
                                 <FiShield size={18} />
                                 <span>Admin</span>
                             </Link>
                         )}
+
+                        <Link to="/inbox" className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setMobileMenuOpen(false)}>
+                            <div className="relative">
+                                <FiBell size={18} />
+                                {hasUnread && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+                            </div>
+                            <span>Inbox {hasUnread && '(New)'}</span>
+                        </Link>
 
                         <button
                             onClick={handleToggleDarkMode}

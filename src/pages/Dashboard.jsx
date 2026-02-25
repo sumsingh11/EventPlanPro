@@ -255,6 +255,13 @@ const Dashboard = () => {
 
                         return (
                             <Card key={event.id} className="hover:shadow-lg transition-shadow">
+                                {/* Thumbnail */}
+                                {event.thumbnail && (
+                                    <div className="mb-3 -mx-6 -mt-6 rounded-t-xl overflow-hidden h-32">
+                                        <img src={event.thumbnail} alt={event.name} className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+
                                 {/* Status badge */}
                                 <div className="flex items-center justify-between mb-3">
                                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${badge.bg} ${badge.text}`}>

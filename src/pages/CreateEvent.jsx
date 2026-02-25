@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { validateRequired, validateFutureDate } from '../utils/validation';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
+import { FiUpload, FiX } from 'react-icons/fi';
 
 const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
 
@@ -16,7 +17,6 @@ const CreateEvent = () => {
     const navigate = useNavigate();
     const { userData } = useSelector(state => state.auth);
 
-    // Today's date in YYYY-MM-DD for the date input min attribute
     const today = new Date().toISOString().split('T')[0];
 
     const [formData, setFormData] = useState({
@@ -31,15 +31,38 @@ const CreateEvent = () => {
         budgetLimit: '',
     });
 
+    const [thumbnail, setThumbnail] = useState(null); // base64 string
+    const [thumbnailPreview, setThumbnailPreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 500 * 1024) {
+            setErrors(prev => ({ ...prev, thumbnail: 'Image must be smaller than 500KB' }));
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setThumbnail(reader.result);
+            setThumbnailPreview(reader.result);
+            setErrors(prev => ({ ...prev, thumbnail: '' }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeThumbnail = () => {
+        setThumbnail(null);
+        setThumbnailPreview(null);
     };
 
     const validate = () => {
@@ -51,9 +74,7 @@ const CreateEvent = () => {
             newErrors.date = 'Event date must be in the future';
         }
         if (!validateRequired(formData.time)) newErrors.time = 'Event time is required';
-        if (!validateRequired(formData.guestLimit)) {
-            newErrors.guestLimit = 'Venue capacity is required';
-        }
+        if (!validateRequired(formData.guestLimit)) newErrors.guestLimit = 'Venue capacity is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -63,7 +84,8 @@ const CreateEvent = () => {
         if (!validate()) return;
 
         setLoading(true);
-        const result = await dispatch(addNewEvent(formData, userData.userId));
+        const eventData = { ...formData, thumbnail: thumbnail || null };
+        const result = await dispatch(addNewEvent(eventData, userData.userId));
         setLoading(false);
 
         if (result.success) {
@@ -83,29 +105,46 @@ const CreateEvent = () => {
 
             <Card>
                 <form onSubmit={handleSubmit} className="space-y-1">
+
+                    {/* Thumbnail Upload */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Event Thumbnail <span className="text-gray-400 text-xs">(optional, max 500KB)</span>
+                        </label>
+                        {thumbnailPreview ? (
+                            <div className="relative inline-block">
+                                <img
+                                    src={thumbnailPreview}
+                                    alt="Thumbnail preview"
+                                    className="w-32 h-32 object-cover rounded-xl border-2 border-primary-300"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeThumbnail}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                                >
+                                    <FiX size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-primary-400 transition-colors">
+                                <FiUpload className="text-gray-400 mb-1" size={24} />
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Upload</span>
+                                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                            </label>
+                        )}
+                        {errors.thumbnail && <p className="text-red-500 text-xs mt-1">{errors.thumbnail}</p>}
+                    </div>
+
                     {/* Event Name */}
-                    <Input
-                        label="Event Name"
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        error={errors.name}
-                        placeholder="My Awesome Event"
-                        required
-                    />
+                    <Input label="Event Name" type="text" name="name" value={formData.name} onChange={handleChange} error={errors.name} placeholder="My Awesome Event" required />
 
                     {/* Event Type */}
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Event Type <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            name="type"
-                            value={formData.type}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        >
+                        <select name="type" value={formData.type} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                             {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
@@ -116,95 +155,42 @@ const CreateEvent = () => {
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Date <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                type="date"
-                                name="date"
-                                value={formData.date}
-                                onChange={handleChange}
-                                min={today}
-                                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                                    }`}
-                            />
+                            <input type="date" name="date" value={formData.date} onChange={handleChange} min={today} className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                             {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
                         </div>
                         <Input label="Time" type="time" name="time" value={formData.time} onChange={handleChange} error={errors.time} required />
                     </div>
 
                     {/* Location */}
-                    <Input
-                        label="Location"
-                        type="text"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleChange}
-                        placeholder="123 Main St, City, State"
-                    />
+                    <Input label="Location" type="text" name="location" value={formData.location} onChange={handleChange} placeholder="123 Main St, City, State" />
 
                     {/* Description */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={3}
-                            placeholder="Add any notes or details about your event..."
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                        />
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                        <textarea name="description" value={formData.description} onChange={handleChange} rows={3} placeholder="Add any notes or details about your event..." className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none" />
                     </div>
 
                     {/* Rules */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Rules / Guidelines
-                        </label>
-                        <textarea
-                            name="rules"
-                            value={formData.rules}
-                            onChange={handleChange}
-                            rows={2}
-                            placeholder="e.g., Dress code, parking info, dietary restrictions..."
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                        />
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rules / Guidelines</label>
+                        <textarea name="rules" value={formData.rules} onChange={handleChange} rows={2} placeholder="e.g., Dress code, parking info, dietary restrictions..." className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none" />
                     </div>
 
-                    {/* Venue Capacity & Budget Limit */}
+                    {/* Venue Capacity & Budget */}
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Venue Capacity <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                type="number"
-                                name="guestLimit"
-                                value={formData.guestLimit}
-                                onChange={handleChange}
-                                placeholder="100"
-                                min="1"
-                                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.guestLimit ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                                    }`}
-                            />
+                            <input type="number" name="guestLimit" value={formData.guestLimit} onChange={handleChange} placeholder="100" min="1" className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.guestLimit ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                             {errors.guestLimit && <p className="text-red-500 text-xs mt-1">{errors.guestLimit}</p>}
                         </div>
-                        <Input
-                            label="Budget Limit ($)"
-                            type="number"
-                            name="budgetLimit"
-                            value={formData.budgetLimit}
-                            onChange={handleChange}
-                            placeholder="5000"
-                            min="0"
-                            step="0.01"
-                        />
+                        <Input label="Budget Limit ($)" type="number" name="budgetLimit" value={formData.budgetLimit} onChange={handleChange} placeholder="5000" min="0" step="0.01" />
                     </div>
 
                     {/* Actions */}
                     <div className="flex gap-4 pt-4">
-                        <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')} fullWidth>
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')} fullWidth>Cancel</Button>
                         <Button type="submit" variant="primary" fullWidth disabled={loading}>
                             {loading ? 'Creating...' : 'Create Event'}
                         </Button>

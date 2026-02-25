@@ -18,6 +18,7 @@ import CreateEvent from './pages/CreateEvent';
 import EventDetail from './pages/EventDetail';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
+import Inbox from './pages/Inbox';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -73,6 +74,7 @@ function App() {
           <Route path="/events/create" element={<CreateEvent />} />
           <Route path="/events/:eventId" element={<EventDetail />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/inbox" element={<Inbox />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={

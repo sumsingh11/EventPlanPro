@@ -41,6 +41,7 @@ const TaskList = ({ eventId }) => {
         title: '',
         dueDate: '',
         priority: 'medium',
+        taskBudget: '',
     });
     const [errors, setErrors] = useState({});
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
@@ -59,7 +60,7 @@ const TaskList = ({ eventId }) => {
 
     const handleAdd = () => {
         setEditingTask(null);
-        setFormData({ title: '', dueDate: '', priority: 'medium' });
+        setFormData({ title: '', dueDate: '', priority: 'medium', taskBudget: '' });
         setErrors({});
         setIsModalOpen(true);
     };
@@ -70,6 +71,7 @@ const TaskList = ({ eventId }) => {
             title: task.title,
             dueDate: task.dueDate,
             priority: task.priority || 'medium',
+            taskBudget: task.taskBudget || '',
         });
         setErrors({});
         setIsModalOpen(true);
@@ -123,6 +125,9 @@ const TaskList = ({ eventId }) => {
         await dispatch(modifyTask(task.id, { priority: priorities[newIdx] }));
     };
 
+    // Budget summary across all tasks
+    const totalTaskBudget = allTasks.reduce((sum, t) => sum + (parseFloat(t.taskBudget) || 0), 0);
+
     return (
         <Card>
             {/* Header */}
@@ -131,6 +136,7 @@ const TaskList = ({ eventId }) => {
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                         {completedCount} of {allTasks.length} completed ({taskProgress}%)
+                        {totalTaskBudget > 0 && <span className="ml-2 text-gray-400">· ${totalTaskBudget.toFixed(0)} allocated across tasks</span>}
                     </p>
                 </div>
                 <Button variant="primary" onClick={handleAdd} className="flex items-center gap-2">
@@ -180,8 +186,8 @@ const TaskList = ({ eventId }) => {
                                     <button
                                         onClick={() => handleToggle(task)}
                                         className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${task.status
-                                                ? 'bg-primary-600 border-primary-600'
-                                                : 'border-gray-300 dark:border-gray-600 hover:border-primary-600'
+                                            ? 'bg-primary-600 border-primary-600'
+                                            : 'border-gray-300 dark:border-gray-600 hover:border-primary-600'
                                             }`}
                                     >
                                         {task.status && <FiCheckCircle className="text-white" size={14} />}
@@ -198,6 +204,7 @@ const TaskList = ({ eventId }) => {
                                         </div>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
                                             Due: {formatDate(task.dueDate)}
+                                            {task.taskBudget > 0 && <span className="ml-2 font-medium text-blue-600 dark:text-blue-400">${parseFloat(task.taskBudget).toFixed(0)} budget</span>}
                                         </p>
                                     </div>
                                 </div>
@@ -270,17 +277,22 @@ const TaskList = ({ eventId }) => {
                     />
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-                        <select
-                            name="priority"
-                            value={formData.priority}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        >
+                        <select name="priority" value={formData.priority} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                             <option value="high">High</option>
                             <option value="medium">Medium</option>
                             <option value="low">Low</option>
                         </select>
                     </div>
+                    <Input
+                        label="Task Budget ($) (optional)"
+                        type="number"
+                        name="taskBudget"
+                        value={formData.taskBudget}
+                        onChange={handleChange}
+                        placeholder="e.g. 200"
+                        min="0"
+                        step="0.01"
+                    />
                 </form>
             </Modal>
 
