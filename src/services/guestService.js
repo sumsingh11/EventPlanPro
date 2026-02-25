@@ -16,6 +16,7 @@ const GUESTS_COLLECTION = 'guests';
 // Create guest
 export const createGuest = async (guestData, eventId, userId) => {
     try {
+        
         // Check for duplicate email in this event first (client-side check)
         const existingGuests = await getEventGuests(eventId);
         const duplicate = existingGuests.find(g => g.email.toLowerCase() === guestData.email.toLowerCase());

@@ -44,7 +44,7 @@ const BudgetOverview = ({ eventId }) => {
         if (budget) setBudgetAmount(budget.totalBudget.toString());
     }, [budget]);
 
-    // ─── Compute spending chart data ───────────────────────
+    // Computing spending chart data
     const categoryData = expenses.reduce((acc, exp) => {
         const cat = exp.category || 'Other';
         acc[cat] = (acc[cat] || 0) + (exp.amount || 0);
@@ -65,7 +65,7 @@ const BudgetOverview = ({ eventId }) => {
     const paidTotal = expenses.filter(e => e.paidStatus).reduce((s, e) => s + (e.amount || 0), 0);
     const unpaidTotal = expenses.filter(e => !e.paidStatus).reduce((s, e) => s + (e.amount || 0), 0);
 
-    // ─── Handlers ──────────────────────────────────────────
+    // Handlers 
     const handleSetBudget = async (e) => {
         e.preventDefault();
         if (!validatePositiveNumber(budgetAmount)) {

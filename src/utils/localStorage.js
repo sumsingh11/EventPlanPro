@@ -1,5 +1,5 @@
 // LocalStorage utility for UI preferences only
-// IMPORTANT: NOT storing event-related data in localStorage
+// NOTE: NOT storing event-related data in localStorage
 
 const STORAGE_KEYS = {
     DARK_MODE: 'eventplanpro_dark_mode',

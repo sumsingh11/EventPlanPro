@@ -296,6 +296,7 @@ const TaskList = ({ eventId }) => {
                 </form>
             </Modal>
 
+
             {/* Delete Modal */}
             <Modal
                 isOpen={deleteModal.isOpen}

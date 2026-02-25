@@ -40,7 +40,7 @@ const Settings = () => {
     const [resetModal, setResetModal] = useState(false);
     const [exporting, setExporting] = useState(false);
 
-    // ─── Profile update ──────────────────────────────────────
+    //  Profile update 
     const handleProfileSave = async () => {
         if (!profileData.firstName.trim() || !profileData.lastName.trim()) {
             dispatch(showNotification('First and last name are required', 'error'));
@@ -66,7 +66,7 @@ const Settings = () => {
         }
     };
 
-    // ─── Password change ─────────────────────────────────────
+    //  Password change 
     const validatePassword = () => {
         const errs = {};
         if (!passwordData.currentPassword) errs.currentPassword = 'Current password is required';
@@ -96,7 +96,7 @@ const Settings = () => {
         }
     };
 
-    // ─────────────────────────────────────────────────────────
+    // Dark mode toggle
     const handleToggleDarkMode = () => {
         dispatch(toggleDarkMode());
         dispatch(showNotification(`Dark mode ${!darkMode ? 'enabled' : 'disabled'}`, 'success'));
@@ -215,6 +215,7 @@ const Settings = () => {
                 )}
             </Card>
 
+
             {/* ── Change Password ── */}
             <Card className="mb-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -252,7 +253,7 @@ const Settings = () => {
                 </form>
             </Card>
 
-            {/* ── Appearance ── */}
+            {/*  Appearance  */}
             <Card className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Appearance</h2>
                 <div className="flex items-center justify-between">
@@ -272,7 +273,7 @@ const Settings = () => {
                 </div>
             </Card>
 
-            {/* ── Data Export ── */}
+            {/*  Data Export  */}
             <Card className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Export Data</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -295,7 +296,7 @@ const Settings = () => {
                 </div>
             </Card>
 
-            {/* ── Danger Zone ── */}
+            {/*  Danger Zone  */}
             <Card className="border-red-200 dark:border-red-800">
                 <div className="flex items-start gap-3 mb-4">
                     <FiAlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />

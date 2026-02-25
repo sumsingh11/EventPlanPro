@@ -5,7 +5,8 @@ const initialState = {
     tasks: [],
     loading: false,
     error: null,
-    statusFilter: 'all', // 'all', 'pending', 'completed'
+    statusFilter: 'all', 
+    // 'all', 'pending', 'completed'
 };
 
 const taskSlice = createSlice({

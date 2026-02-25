@@ -21,6 +21,7 @@ const Admin = () => {
         totalTasks: 0, totalBudget: 0, totalExpenses: 0,
     });
 
+    
     // Announcement state
     const [announcementText, setAnnouncementText] = useState('');
     const [currentAnnouncement, setCurrentAnnouncement] = useState(null);

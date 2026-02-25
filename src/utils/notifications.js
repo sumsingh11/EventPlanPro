@@ -1,5 +1,5 @@
 // Notification toast management
-// This is a simple implementation - later enhance with a library like react-hot-toast after all MUST HAVE features are implemented
+// This is a simple implementation for naw - later try like react-hot-toast or react-toastify for better UI and features
 
 let notificationCallback = null;
 
