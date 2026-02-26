@@ -72,14 +72,14 @@ export const {
 } = budgetSlice.actions;
 
 // Thunks
-export const fetchEventBudget = (eventId) => async (dispatch) => {
+export const fetchEventBudget = (eventId, userId) => async (dispatch) => {
     try {
         dispatch(setLoading(true));
-        const budget = await getEventBudget(eventId);
+        const budget = await getEventBudget(eventId, userId);
         dispatch(setBudgetData(budget));
 
         if (budget) {
-            const expenses = await getBudgetExpenses(budget.id);
+            const expenses = await getBudgetExpenses(budget.id, userId);
             dispatch(setExpenses(expenses));
         }
 
@@ -124,7 +124,7 @@ export const addNewExpense = (expenseData, budgetId, eventId, userId) => async (
         dispatch(addExpense(newExpense));
 
         // Recalculate budget totals locally
-        dispatch(fetchEventBudget(eventId));
+        dispatch(fetchEventBudget(eventId, userId));
 
         return { success: true, id: result.id };
     } catch (error) {
@@ -133,13 +133,13 @@ export const addNewExpense = (expenseData, budgetId, eventId, userId) => async (
     }
 };
 
-export const modifyExpense = (expenseId, expenseData, budgetId, eventId) => async (dispatch) => {
+export const modifyExpense = (expenseId, expenseData, budgetId, eventId, userId) => async (dispatch) => {
     try {
         await updateExpense(expenseId, expenseData, budgetId);
         dispatch(updateExpenseInState({ id: expenseId, ...expenseData }));
 
         // Recalculate budget totals
-        dispatch(fetchEventBudget(eventId));
+        dispatch(fetchEventBudget(eventId, userId));
 
         return { success: true };
     } catch (error) {
@@ -148,13 +148,13 @@ export const modifyExpense = (expenseId, expenseData, budgetId, eventId) => asyn
     }
 };
 
-export const deleteExpenseById = (expenseId, budgetId, eventId) => async (dispatch) => {
+export const deleteExpenseById = (expenseId, budgetId, eventId, userId) => async (dispatch) => {
     try {
         await deleteExpense(expenseId, budgetId);
         dispatch(removeExpense(expenseId));
 
         // Recalculate budget totals
-        dispatch(fetchEventBudget(eventId));
+        dispatch(fetchEventBudget(eventId, userId));
 
         return { success: true };
     } catch (error) {

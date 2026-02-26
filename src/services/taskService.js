@@ -37,13 +37,12 @@ export const createTask = async (taskData, eventId, userId) => {
 };
 
 // Get all tasks for an event
-export const getEventTasks = async (eventId) => {
+export const getEventTasks = async (eventId, userId) => {
     try {
-        const q = query(
-            collection(db, TASKS_COLLECTION),
-            where('eventId', '==', eventId),
-            orderBy('dueDate', 'asc')
-        );
+        const constraints = [where('eventId', '==', eventId)];
+        if (userId) constraints.push(where('userId', '==', userId));
+        constraints.push(orderBy('dueDate', 'asc'));
+        const q = query(collection(db, TASKS_COLLECTION), ...constraints);
 
         const querySnapshot = await getDocs(q);
         const tasks = [];

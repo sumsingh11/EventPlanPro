@@ -16,9 +16,9 @@ const GUESTS_COLLECTION = 'guests';
 // Create guest
 export const createGuest = async (guestData, eventId, userId) => {
     try {
-        
+
         // Check for duplicate email in this event first (client-side check)
-        const existingGuests = await getEventGuests(eventId);
+        const existingGuests = await getEventGuests(eventId, userId);
         const duplicate = existingGuests.find(g => g.email.toLowerCase() === guestData.email.toLowerCase());
 
         if (duplicate) {
@@ -44,12 +44,11 @@ export const createGuest = async (guestData, eventId, userId) => {
 };
 
 // Get all guests for an event
-export const getEventGuests = async (eventId) => {
+export const getEventGuests = async (eventId, userId) => {
     try {
-        const q = query(
-            collection(db, GUESTS_COLLECTION),
-            where('eventId', '==', eventId)
-        );
+        const constraints = [where('eventId', '==', eventId)];
+        if (userId) constraints.push(where('userId', '==', userId));
+        const q = query(collection(db, GUESTS_COLLECTION), ...constraints);
 
         const querySnapshot = await getDocs(q);
         const guests = [];

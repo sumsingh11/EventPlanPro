@@ -56,10 +56,10 @@ export const {
 } = guestSlice.actions;
 
 // Thunks
-export const fetchEventGuests = (eventId) => async (dispatch) => {
+export const fetchEventGuests = (eventId, userId) => async (dispatch) => {
     try {
         dispatch(setLoading(true));
-        const guests = await getEventGuests(eventId);
+        const guests = await getEventGuests(eventId, userId);
         dispatch(setGuests(guests));
         return { success: true };
     } catch (error) {

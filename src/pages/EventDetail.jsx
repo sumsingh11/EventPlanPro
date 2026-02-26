@@ -55,9 +55,10 @@ const EventDetail = () => {
             const eventData = await getEvent(eventId);
             setEvent(eventData);
             setFormData(eventData);
-            dispatch(fetchEventGuests(eventId));
-            dispatch(fetchEventTasks(eventId));
-            dispatch(fetchEventBudget(eventId));
+            const uid = userData?.userId;
+            dispatch(fetchEventGuests(eventId, uid));
+            dispatch(fetchEventTasks(eventId, uid));
+            dispatch(fetchEventBudget(eventId, uid));
         } catch (error) {
             console.error('Error loading event:', error);
             dispatch(showNotification('Failed to load event', 'error'));

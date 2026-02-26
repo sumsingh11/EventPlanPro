@@ -19,7 +19,7 @@ const EXPENSES_COLLECTION = 'expenses';
 export const setBudget = async (budgetData, eventId, userId) => {
     try {
         // Check if budget already exists for this event
-        const existingBudgets = await getEventBudget(eventId);
+        const existingBudgets = await getEventBudget(eventId, userId);
 
         if (existingBudgets) {
             // Update existing budget
@@ -52,12 +52,11 @@ export const setBudget = async (budgetData, eventId, userId) => {
 };
 
 // Get budget for an event
-export const getEventBudget = async (eventId) => {
+export const getEventBudget = async (eventId, userId) => {
     try {
-        const q = query(
-            collection(db, BUDGETS_COLLECTION),
-            where('eventId', '==', eventId)
-        );
+        const constraints = [where('eventId', '==', eventId)];
+        if (userId) constraints.push(where('userId', '==', userId));
+        const q = query(collection(db, BUDGETS_COLLECTION), ...constraints);
 
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
@@ -137,12 +136,11 @@ export const createExpense = async (expenseData, budgetId, eventId, userId) => {
 };
 
 // Get all expenses for a budget
-export const getBudgetExpenses = async (budgetId) => {
+export const getBudgetExpenses = async (budgetId, userId) => {
     try {
-        const q = query(
-            collection(db, EXPENSES_COLLECTION),
-            where('budgetId', '==', budgetId)
-        );
+        const constraints = [where('budgetId', '==', budgetId)];
+        if (userId) constraints.push(where('userId', '==', userId));
+        const q = query(collection(db, EXPENSES_COLLECTION), ...constraints);
 
         const querySnapshot = await getDocs(q);
         const expenses = [];

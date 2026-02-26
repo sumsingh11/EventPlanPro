@@ -5,7 +5,7 @@ const initialState = {
     tasks: [],
     loading: false,
     error: null,
-    statusFilter: 'all', 
+    statusFilter: 'all',
     // 'all', 'pending', 'completed'
 };
 
@@ -57,10 +57,10 @@ export const {
 } = taskSlice.actions;
 
 // Thunks
-export const fetchEventTasks = (eventId) => async (dispatch) => {
+export const fetchEventTasks = (eventId, userId) => async (dispatch) => {
     try {
         dispatch(setLoading(true));
-        const tasks = await getEventTasks(eventId);
+        const tasks = await getEventTasks(eventId, userId);
         dispatch(setTasks(tasks));
         return { success: true };
     } catch (error) {
