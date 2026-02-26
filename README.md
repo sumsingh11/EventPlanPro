@@ -1,6 +1,8 @@
 # EventPlanPro
 
-A comprehensive event management web application built with React, Firebase, Redux Toolkit, and Tailwind CSS.
+A full-stack event management web application designed to help users plan, organize, and manage personal events such as birthdays, weddings, anniversaries, and parties.
+
+EventPlanPro provides structured event tracking, guest management, task monitoring, and budget control within a secure, authenticated environment.
 
 ## Features
 
