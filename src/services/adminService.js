@@ -103,33 +103,45 @@ export const adminDeleteEvent = async (eventId) => {
     }
 };
 
-// Export system-wide report as CSV
-export const exportSystemReport = async () => {
-    const [usersSnap, eventsSnap] = await Promise.all([
-        getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'events')),
-    ]);
+// Export tab-specific report as CSV
+export const exportAdminReport = async (tab, data) => {
+    let csv = '';
+    let fileName = '';
 
-    let csv = 'SYSTEM REPORT\n\n';
+    if (tab === 'overview') {
+        const { stats } = data;
+        csv = 'OVERVIEW REPORT\n\nMetric,Value\n';
+        csv += `Total Users,${stats.totalUsers}\n`;
+        csv += `Total Events,${stats.totalEvents}\n`;
+        csv += `Total Guests,${stats.totalGuests}\n`;
+        csv += `Total Tasks,${stats.totalTasks}\n`;
+        csv += `Total Budget,$${stats.totalBudget}\n`;
+        csv += `Total Expenses,$${stats.totalExpenses}\n`;
+        fileName = 'overview_report';
+    } else if (tab === 'users') {
+        const { users } = data;
+        csv = 'USERS REPORT\n\nName,Email,Role,Joined\n';
+        users.forEach((u) => {
+            const joined = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : '';
+            csv += `"${u.firstName || ''} ${u.lastName || ''}","${u.email || ''}","${u.role || 'user'}","${joined}"\n`;
+        });
+        fileName = 'users_report';
+    } else if (tab === 'events') {
+        const { events } = data;
+        csv = 'EVENTS REPORT\n\nName,Type,Date,Location,Status,Owner\n';
+        events.forEach((e) => {
+            csv += `"${e.name || ''}","${e.type || ''}","${e.date || ''}","${e.location || ''}","${e.status || 'active'}","${e.userId || ''}"\n`;
+        });
+        fileName = 'events_report';
+    }
 
-    csv += 'USERS\nName,Email,Role,Joined\n';
-    usersSnap.forEach((d) => {
-        const u = d.data();
-        const joined = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : '';
-        csv += `"${u.firstName || ''} ${u.lastName || ''}","${u.email || ''}","${u.role || 'user'}","${joined}"\n`;
-    });
-
-    csv += '\nEVENTS\nName,Type,Date,Location,Status,Owner\n';
-    eventsSnap.forEach((d) => {
-        const e = d.data();
-        csv += `"${e.name || ''}","${e.type || ''}","${e.date || ''}","${e.location || ''}","${e.status || 'active'}","${e.userId || ''}"\n`;
-    });
+    if (!csv) return;
 
     // Trigger download
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `system_report_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `${fileName}_${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

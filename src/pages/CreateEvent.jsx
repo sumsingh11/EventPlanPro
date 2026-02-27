@@ -6,7 +6,7 @@ import { showNotification } from '../store/slices/notificationSlice';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { validateRequired, validateFutureDate } from '../utils/validation';
+import { validateRequired, validateFutureDate, validateFutureDatetime } from '../utils/validation';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
 import { FiUpload, FiX } from 'react-icons/fi';
 
@@ -71,9 +71,13 @@ const CreateEvent = () => {
         if (!validateRequired(formData.date)) {
             newErrors.date = 'Event date is required';
         } else if (!validateFutureDate(formData.date)) {
-            newErrors.date = 'Event date must be in the future';
+            newErrors.date = 'Event date cannot be in the past';
         }
-        if (!validateRequired(formData.time)) newErrors.time = 'Event time is required';
+        if (!validateRequired(formData.time)) {
+            newErrors.time = 'Event time is required';
+        } else if (formData.date && !validateFutureDatetime(formData.date, formData.time)) {
+            newErrors.time = 'Event date and time must be in the future';
+        }
         if (!validateRequired(formData.guestLimit)) newErrors.guestLimit = 'Venue capacity is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;

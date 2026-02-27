@@ -9,6 +9,7 @@ import {
     selectFilteredTasks,
     selectTaskProgress
 } from '../../store/slices/taskSlice';
+import { addNewExpense, deleteExpenseById } from '../../store/slices/budgetSlice';
 import { showNotification } from '../../store/slices/notificationSlice';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -28,6 +29,7 @@ const PRIORITY_CONFIG = {
 const TaskList = ({ eventId }) => {
     const dispatch = useDispatch();
     const { userData } = useSelector(state => state.auth);
+    const { budget, expenses } = useSelector(state => state.budget);
     const tasks = useSelector(selectFilteredTasks);
     const taskProgress = useSelector(selectTaskProgress);
     const { statusFilter, tasks: allTasks } = useSelector(state => state.tasks);
@@ -101,7 +103,20 @@ const TaskList = ({ eventId }) => {
             if (result.success) dispatch(showNotification(SUCCESS_MESSAGES.TASK_UPDATED, 'success'));
         } else {
             result = await dispatch(addNewTask(formData, eventId, userData.userId));
-            if (result.success) dispatch(showNotification(SUCCESS_MESSAGES.TASK_ADDED, 'success'));
+            if (result.success) {
+                dispatch(showNotification(SUCCESS_MESSAGES.TASK_ADDED, 'success'));
+
+                // If task has a budget, automatically add it as an expense
+                if (budget && formData.taskBudget && parseFloat(formData.taskBudget) > 0) {
+                    const expenseData = {
+                        category: `Task: ${formData.title}`,
+                        amount: parseFloat(formData.taskBudget),
+                        paidStatus: false,
+                        linkedTaskId: result.id // Track the link for cleanup
+                    };
+                    await dispatch(addNewExpense(expenseData, budget.id, eventId, userData.userId));
+                }
+            }
         }
         setIsModalOpen(false);
     };
@@ -111,8 +126,21 @@ const TaskList = ({ eventId }) => {
     };
 
     const handleDelete = async () => {
-        await dispatch(deleteTaskById(deleteModal.taskId));
-        dispatch(showNotification(SUCCESS_MESSAGES.TASK_DELETED, 'success'));
+        const taskId = deleteModal.taskId;
+        const taskTitle = deleteModal.taskTitle;
+
+        const result = await dispatch(deleteTaskById(taskId));
+        if (result.success) {
+            dispatch(showNotification(SUCCESS_MESSAGES.TASK_DELETED, 'success'));
+
+            // If there's a linked expense, delete it too
+            if (budget) {
+                const linkedExpense = expenses.find(e => e.linkedTaskId === taskId || e.category === `Task: ${taskTitle}`);
+                if (linkedExpense) {
+                    await dispatch(deleteExpenseById(linkedExpense.id, budget.id, eventId, userData.userId));
+                }
+            }
+        }
         setDeleteModal({ isOpen: false, taskId: null, taskTitle: '' });
     };
 

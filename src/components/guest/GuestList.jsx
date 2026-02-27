@@ -19,7 +19,7 @@ import { FiPlus, FiEdit, FiTrash2, FiMail, FiAlertTriangle, FiSend } from 'react
 import { validateEmail, validateRequired } from '../../utils/validation';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../utils/notifications';
 
-const GuestList = ({ eventId, venueCapacity, eventName }) => {
+const GuestList = ({ eventId, venueCapacity, event }) => {
     const dispatch = useDispatch();
     const { userData } = useSelector(state => state.auth);
     const guests = useSelector(selectFilteredGuests);
@@ -113,8 +113,22 @@ const GuestList = ({ eventId, venueCapacity, eventName }) => {
     };
 
     const handleEmailGuest = (guest) => {
-        const subject = encodeURIComponent(`Invitation: ${eventName || 'Your Event'}`);
-        const body = encodeURIComponent(`Hi ${guest.firstName},\n\nYou are invited to ${eventName || 'our event'}!\n\nPlease update your RSVP status.\n\nThank you!`);
+        const subject = encodeURIComponent(`Invitation: ${event?.name || 'Your Event'}`);
+        const bodyText = `
+Hi ${guest.firstName},
+
+You are invited to "${event?.name || 'our event'}"!
+
+Event Details:
+- Date: ${event?.date}
+- Time: ${event?.time || 'TBD'}
+- Location: ${event?.location}
+
+Please let us know if you can attend by updating your RSVP status.
+
+Thank you!
+`.trim();
+        const body = encodeURIComponent(bodyText);
         window.open(`mailto:${guest.email}?subject=${subject}&body=${body}`, '_self');
     };
 
@@ -123,7 +137,7 @@ const GuestList = ({ eventId, venueCapacity, eventName }) => {
             dispatch(showNotification('No guests to email', 'info'));
             return;
         }
-        emailAllGuests(allGuests, eventName || 'Your Event');
+        emailAllGuests(allGuests, event);
         dispatch(showNotification('Opening email client...', 'info'));
     };
 

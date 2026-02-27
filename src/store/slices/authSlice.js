@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { loginUser, registerUser, logoutUser, getUserData } from '../../services/authService';
+import { loginUser, registerUser, logoutUser, getUserData, googleSignIn } from '../../services/authService';
 
 const initialState = {
     user: null,
@@ -82,6 +82,18 @@ export const signOut = () => async (dispatch) => {
     try {
         await logoutUser();
         dispatch(logout());
+        return { success: true };
+    } catch (error) {
+        dispatch(setError(error.message));
+        return { success: false, error: error.message };
+    }
+};
+
+export const googleLogin = () => async (dispatch) => {
+    try {
+        dispatch(setLoading(true));
+        const result = await googleSignIn();
+        dispatch(setUser({ user: result.user, userData: result.userData }));
         return { success: true };
     } catch (error) {
         dispatch(setError(error.message));

@@ -128,7 +128,7 @@ const BudgetOverview = ({ eventId }) => {
         };
         let result;
         if (editingExpense) {
-            result = await dispatch(modifyExpense(editingExpense.id, expenseData, budget.id, eventId));
+            result = await dispatch(modifyExpense(editingExpense.id, expenseData, budget.id, eventId, userData.userId));
             if (result.success) dispatch(showNotification(SUCCESS_MESSAGES.EXPENSE_UPDATED, 'success'));
         } else {
             result = await dispatch(addNewExpense(expenseData, budget.id, eventId, userData.userId));
@@ -138,7 +138,7 @@ const BudgetOverview = ({ eventId }) => {
     };
 
     const handleDeleteExpense = async () => {
-        await dispatch(deleteExpenseById(deleteModal.expenseId, budget.id, eventId));
+        await dispatch(deleteExpenseById(deleteModal.expenseId, budget.id, eventId, userData.userId));
         dispatch(showNotification(SUCCESS_MESSAGES.EXPENSE_DELETED, 'success'));
         setDeleteModal({ isOpen: false, expenseId: null, expenseCategory: '' });
     };
@@ -276,8 +276,8 @@ const BudgetOverview = ({ eventId }) => {
                                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${expense.amount.toFixed(2)}</td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${expense.paidStatus
-                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                                    : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                                                     }`}>
                                                     {expense.paidStatus ? 'Paid' : 'Unpaid'}
                                                 </span>

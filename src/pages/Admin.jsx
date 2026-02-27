@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { showNotification } from '../store/slices/notificationSlice';
 import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
-import { FiUsers, FiCalendar, FiDollarSign, FiShield, FiTrash2, FiList, FiDownload, FiMessageSquare } from 'react-icons/fi';
-import { getAllUsers, getSystemStats, getAllEvents, updateUserRole, deleteUserAccount, adminDeleteEvent, exportSystemReport } from '../services/adminService';
+import { FiUsers, FiCalendar, FiDollarSign, FiShield, FiTrash2, FiList, FiDownload, FiMessageSquare, FiEye } from 'react-icons/fi';
+import { getAllUsers, getSystemStats, getAllEvents, updateUserRole, deleteUserAccount, adminDeleteEvent, exportAdminReport } from '../services/adminService';
 import { getAnnouncement, setAnnouncement, clearAnnouncement } from '../services/announcementService';
 
 const Admin = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -21,7 +23,7 @@ const Admin = () => {
         totalTasks: 0, totalBudget: 0, totalExpenses: 0,
     });
 
-    
+
     // Announcement state
     const [announcementText, setAnnouncementText] = useState('');
     const [currentAnnouncement, setCurrentAnnouncement] = useState(null);
@@ -86,8 +88,9 @@ const Admin = () => {
 
     const handleExportReport = async () => {
         try {
-            await exportSystemReport();
-            dispatch(showNotification('System report downloaded', 'success'));
+            const data = { stats, users, events: allEvents };
+            await exportAdminReport(activeTab, data);
+            dispatch(showNotification(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} report downloaded`, 'success'));
         } catch (err) {
             dispatch(showNotification('Failed to export report', 'error'));
         }
@@ -151,8 +154,8 @@ const Admin = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
-                                        ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
                                     }`}
                             >
                                 <Icon size={16} /> {tab.label}
@@ -253,8 +256,8 @@ const Admin = () => {
                                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{event.date}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${event.status === 'completed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
-                                                    event.status === 'cancelled' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-                                                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                                event.status === 'cancelled' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                                                    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                                 }`}>
                                                 {event.status || 'active'}
                                             </span>

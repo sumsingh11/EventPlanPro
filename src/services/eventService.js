@@ -12,6 +12,7 @@ import {
     serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { setBudget } from './budgetService';
 
 const EVENTS_COLLECTION = 'events';
 
@@ -29,6 +30,15 @@ export const createEvent = async (eventData, userId) => {
 
         // Update with the generated ID
         await updateDoc(docRef, { eventId: docRef.id });
+
+        // If budgetLimit was provided, create the budget document
+        if (eventData.budgetLimit && parseFloat(eventData.budgetLimit) > 0) {
+            await setBudget(
+                { totalBudget: parseFloat(eventData.budgetLimit) },
+                docRef.id,
+                userId
+            );
+        }
 
         return { success: true, id: docRef.id };
     } catch (error) {

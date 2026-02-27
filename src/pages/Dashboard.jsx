@@ -50,7 +50,15 @@ const Dashboard = () => {
             loadGuestCounts();
         }
         // Load system announcement
-        getAnnouncement().then(ann => { if (ann) setAnnouncementData(ann); }).catch(() => { });
+        getAnnouncement().then(ann => {
+            if (ann) {
+                const STORAGE_KEY = 'eventplanpro_inbox_read';
+                const readTimestamp = localStorage.getItem(STORAGE_KEY);
+                if (readTimestamp !== ann.updatedAt) {
+                    setAnnouncementData(ann);
+                }
+            }
+        }).catch(() => { });
     }, [dispatch, userData]);
 
     const loadGuestCounts = async () => {

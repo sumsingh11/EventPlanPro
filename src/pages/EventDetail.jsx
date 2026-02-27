@@ -12,10 +12,11 @@ import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter } from 'react-icons/fi';
+import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter, FiImage } from 'react-icons/fi';
 import GuestList from '../components/guest/GuestList';
 import TaskList from '../components/task/TaskList';
 import BudgetOverview from '../components/budget/BudgetOverview';
+import EventMedia from '../components/media/EventMedia';
 import { formatDate } from '../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
 
@@ -117,6 +118,7 @@ const EventDetail = () => {
         { id: 'guests', label: 'Guests', icon: FiUsers },
         { id: 'tasks', label: 'Tasks', icon: FiCheckSquare },
         { id: 'budget', label: 'Budget', icon: FiDollarSign },
+        { id: 'media', label: 'Media', icon: FiImage },
     ];
 
     const currentStatus = event.status || 'active';
@@ -383,6 +385,10 @@ const EventDetail = () => {
                 {activeTab === 'guests' && <GuestList eventId={eventId} venueCapacity={event.guestLimit} eventName={event.name} />}
                 {activeTab === 'tasks' && <TaskList eventId={eventId} />}
                 {activeTab === 'budget' && <BudgetOverview eventId={eventId} />}
+
+                {activeTab === 'media' && (
+                    <EventMedia eventId={eventId} userId={userData?.userId} />
+                )}
             </div>
 
             {/* Status Change Confirmation Modal */}

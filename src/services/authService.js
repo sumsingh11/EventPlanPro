@@ -6,9 +6,43 @@ import {
     updatePassword,
     reauthenticateWithCredential,
     EmailAuthProvider,
+    signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { auth, db, googleProvider } from '../config/firebase';
+
+// Google Sign In
+export const googleSignIn = async () => {
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+
+        // Check if user exists in Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+
+        let userData;
+        if (!userDoc.exists()) {
+            // Create user document for first-time Google sign-in
+            const nameParts = user.displayName ? user.displayName.split(' ') : ['User', ''];
+            userData = {
+                userId: user.uid,
+                firstName: nameParts[0] || 'User',
+                lastName: nameParts.slice(1).join(' ') || '',
+                email: user.email,
+                role: 'user',
+                createdAt: serverTimestamp(),
+            };
+            await setDoc(doc(db, 'users', user.uid), userData);
+        } else {
+            userData = userDoc.data();
+        }
+
+        return { success: true, user, userData };
+    } catch (error) {
+        console.error('Google Sign-In error:', error);
+        throw error;
+    }
+};
 
 // Register new user
 export const registerUser = async (userData) => {

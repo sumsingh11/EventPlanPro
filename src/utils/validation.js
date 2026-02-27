@@ -27,9 +27,18 @@ export const validateDate = (dateString) => {
 };
 
 export const validateFutureDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    return date > now;
+    // Allow today and any future date (date-only comparison)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateString + 'T00:00:00');
+    return date >= today;
+};
+
+// Validate that a date+time combination is in the future
+export const validateFutureDatetime = (dateString, timeString) => {
+    if (!dateString || !timeString) return false;
+    const eventDateTime = new Date(`${dateString}T${timeString}`);
+    return eventDateTime > new Date();
 };
 
 export const validateNumber = (value) => {
