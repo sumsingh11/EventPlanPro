@@ -264,9 +264,18 @@ const Admin = () => {
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-400 font-mono">{event.userId?.slice(0, 12)}…</td>
                                         <td className="px-4 py-3 text-right">
-                                            <button onClick={() => handleDeleteEvent(event)} title="Delete event" className="flex items-center gap-1 px-2 py-1 text-xs rounded font-medium bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-300 transition-colors ml-auto">
-                                                <FiTrash2 size={12} /> Delete
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => navigate(`/events/${event.id}`)}
+                                                    title="View Event"
+                                                    className="flex items-center gap-1 px-2 py-1 text-xs rounded font-medium bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 transition-colors"
+                                                >
+                                                    <FiEye size={12} /> View
+                                                </button>
+                                                <button onClick={() => handleDeleteEvent(event)} title="Delete event" className="flex items-center gap-1 px-2 py-1 text-xs rounded font-medium bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-300 transition-colors">
+                                                    <FiTrash2 size={12} /> Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

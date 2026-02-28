@@ -3,11 +3,12 @@ import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTime
 import { db } from '../../config/firebase';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { FiImage, FiVideo, FiUpload, FiTrash2, FiX, FiPlus, FiFile } from 'react-icons/fi';
+import { FiImage, FiVideo, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { showNotification } from '../../store/slices/notificationSlice';
 import { useDispatch } from 'react-redux';
 
-const MAX_FILE_SIZE = 500 * 1024; // 500KB
+const MAX_FILE_SIZE_MB = 1; // 1 MB limit (Firestore doc limit is ~1MB)
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const EventMedia = ({ eventId, userId }) => {
     const dispatch = useDispatch();
@@ -23,58 +24,72 @@ const EventMedia = ({ eventId, userId }) => {
         setLoading(true);
         try {
             const mediaRef = collection(db, 'events', eventId, 'media');
-            const q = query(mediaRef, orderBy('createdAt', 'desc'));
-            const snapshot = await getDocs(q);
-            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // orderBy requires a Firestore index; use a simple getDocs fallback
+            let snapshot;
+            try {
+                const q = query(mediaRef, orderBy('createdAt', 'desc'));
+                snapshot = await getDocs(q);
+            } catch {
+                snapshot = await getDocs(mediaRef);
+            }
+            const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setMediaItems(items);
         } catch (error) {
             console.error('Error loading media:', error);
+            dispatch(showNotification('Failed to load media gallery', 'error'));
         } finally {
             setLoading(false);
         }
     };
 
-    const handleFileChange = async (e) => {
+    const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        e.target.value = ''; // reset input right away
 
         if (file.size > MAX_FILE_SIZE) {
-            dispatch(showNotification('File size exceeds 500KB limit', 'error'));
+            dispatch(showNotification(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit`, 'error'));
             return;
         }
 
         setUploading(true);
-        try {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
+        const reader = new FileReader();
+
+        reader.onerror = () => {
+            dispatch(showNotification('Failed to read file', 'error'));
+            setUploading(false);
+        };
+
+        reader.onload = async () => {
+            try {
                 const base64Data = reader.result;
-                const type = file.type.startsWith('image/') ? 'image' :
-                    file.type.startsWith('video/') ? 'video' : 'other';
+                const type = file.type.startsWith('image/') ? 'image'
+                    : file.type.startsWith('video/') ? 'video' : 'other';
 
                 await addDoc(collection(db, 'events', eventId, 'media'), {
                     url: base64Data,
                     type,
                     fileName: file.name,
-                    userId,
+                    fileSize: file.size,
+                    userId: userId || '',
                     createdAt: serverTimestamp(),
                 });
 
                 dispatch(showNotification('Media uploaded successfully', 'success'));
-                loadMedia();
-            };
-        } catch (error) {
-            console.error('Upload error:', error);
-            dispatch(showNotification('Failed to upload media', 'error'));
-        } finally {
-            setUploading(false);
-            e.target.value = ''; // Reset input
-        }
+                await loadMedia(); // refresh gallery after upload completes
+            } catch (error) {
+                console.error('Upload error:', error);
+                dispatch(showNotification('Failed to upload media', 'error'));
+            } finally {
+                setUploading(false);
+            }
+        };
+
+        reader.readAsDataURL(file);
     };
 
     const handleDelete = async (mediaId) => {
         if (!window.confirm('Are you sure you want to delete this media?')) return;
-
         try {
             await deleteDoc(doc(db, 'events', eventId, 'media', mediaId));
             dispatch(showNotification('Media deleted', 'success'));
@@ -92,10 +107,7 @@ const EventMedia = ({ eventId, userId }) => {
                     <FiImage className="text-primary-600" />
                     Event Media Gallery
                 </h3>
-                <label className={`
-                    flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg cursor-pointer transition-colors
-                    ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
-                `}>
+                <label className={`flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg cursor-pointer transition-colors ${uploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}>
                     <FiPlus size={20} />
                     <span>{uploading ? 'Uploading...' : 'Upload Media'}</span>
                     <input
@@ -108,8 +120,12 @@ const EventMedia = ({ eventId, userId }) => {
                 </label>
             </div>
 
+            <p className="text-xs text-gray-400 italic">
+                * Files must be under {MAX_FILE_SIZE_MB}MB. Supported: images and videos.
+            </p>
+
             {loading ? (
-                <div className="text-center py-12 text-gray-500">Loading Gallery...</div>
+                <div className="text-center py-12 text-gray-500">Loading gallery...</div>
             ) : mediaItems.length === 0 ? (
                 <Card className="text-center py-12">
                     <FiImage className="mx-auto text-gray-300 mb-4" size={48} />
@@ -127,12 +143,15 @@ const EventMedia = ({ eventId, userId }) => {
                                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                 />
                             ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center relative">
+                                <div className="w-full h-full flex flex-col items-center justify-center">
                                     <FiVideo size={40} className="text-gray-400" />
                                     <span className="text-[10px] text-gray-500 mt-2 px-2 text-center truncate w-full">{item.fileName}</span>
-                                    {/* Sub-optimal but base64 videos won't play easily without heavy treatment, showing icon */}
                                 </div>
                             )}
+
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/40 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-white text-[10px] truncate">{item.fileName}</p>
+                            </div>
 
                             <button
                                 onClick={() => handleDelete(item.id)}
@@ -145,10 +164,6 @@ const EventMedia = ({ eventId, userId }) => {
                     ))}
                 </div>
             )}
-
-            <p className="text-xs text-gray-400 italic">
-                * Note: Individual files must be under 500KB.
-            </p>
         </div>
     );
 };

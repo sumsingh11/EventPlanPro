@@ -117,21 +117,32 @@ const BudgetOverview = ({ eventId }) => {
     const handleExpenseSubmit = async (e) => {
         e.preventDefault();
         if (!validateExpense()) return;
-        if (!budget) {
-            dispatch(showNotification('Please set a budget first', 'warning'));
-            return;
-        }
+
         const expenseData = {
             category: expenseFormData.category,
             amount: parseFloat(expenseFormData.amount),
             paidStatus: expenseFormData.paidStatus,
         };
+
+        // Determine the budget ID to use (auto-create if needed)
+        let budgetId = budget?.id;
+        if (!budgetId) {
+            const budgetResult = await dispatch(createOrUpdateBudget(
+                { totalBudget: 0 }, eventId, userData.userId
+            ));
+            if (!budgetResult.success) {
+                dispatch(showNotification('Failed to initialise budget', 'error'));
+                return;
+            }
+            budgetId = budgetResult.id;
+        }
+
         let result;
         if (editingExpense) {
-            result = await dispatch(modifyExpense(editingExpense.id, expenseData, budget.id, eventId, userData.userId));
+            result = await dispatch(modifyExpense(editingExpense.id, expenseData, budgetId, eventId, userData.userId));
             if (result.success) dispatch(showNotification(SUCCESS_MESSAGES.EXPENSE_UPDATED, 'success'));
         } else {
-            result = await dispatch(addNewExpense(expenseData, budget.id, eventId, userData.userId));
+            result = await dispatch(addNewExpense(expenseData, budgetId, eventId, userData.userId));
             if (result.success) dispatch(showNotification(SUCCESS_MESSAGES.EXPENSE_ADDED, 'success'));
         }
         setIsExpenseModalOpen(false);

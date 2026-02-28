@@ -382,7 +382,7 @@ const EventDetail = () => {
                     </Card>
                 )}
 
-                {activeTab === 'guests' && <GuestList eventId={eventId} venueCapacity={event.guestLimit} eventName={event.name} />}
+                {activeTab === 'guests' && <GuestList eventId={eventId} venueCapacity={event.guestLimit} event={event} />}
                 {activeTab === 'tasks' && <TaskList eventId={eventId} />}
                 {activeTab === 'budget' && <BudgetOverview eventId={eventId} />}
 

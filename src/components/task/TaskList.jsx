@@ -9,7 +9,7 @@ import {
     selectFilteredTasks,
     selectTaskProgress
 } from '../../store/slices/taskSlice';
-import { addNewExpense, deleteExpenseById } from '../../store/slices/budgetSlice';
+import { addNewExpense, deleteExpenseById, createOrUpdateBudget } from '../../store/slices/budgetSlice';
 import { showNotification } from '../../store/slices/notificationSlice';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -107,14 +107,26 @@ const TaskList = ({ eventId }) => {
                 dispatch(showNotification(SUCCESS_MESSAGES.TASK_ADDED, 'success'));
 
                 // If task has a budget, automatically add it as an expense
-                if (budget && formData.taskBudget && parseFloat(formData.taskBudget) > 0) {
+                if (formData.taskBudget && parseFloat(formData.taskBudget) > 0) {
                     const expenseData = {
                         category: `Task: ${formData.title}`,
                         amount: parseFloat(formData.taskBudget),
                         paidStatus: false,
-                        linkedTaskId: result.id // Track the link for cleanup
+                        linkedTaskId: result.id,
                     };
-                    await dispatch(addNewExpense(expenseData, budget.id, eventId, userData.userId));
+
+                    // Use existing budget or auto-create one first
+                    let budgetId = budget?.id;
+                    if (!budgetId) {
+                        const budgetResult = await dispatch(createOrUpdateBudget(
+                            { totalBudget: 0 }, eventId, userData.userId
+                        ));
+                        if (budgetResult.success) budgetId = budgetResult.id;
+                    }
+
+                    if (budgetId) {
+                        await dispatch(addNewExpense(expenseData, budgetId, eventId, userData.userId));
+                    }
                 }
             }
         }
