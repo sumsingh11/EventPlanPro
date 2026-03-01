@@ -116,7 +116,7 @@ export const createExpense = async (expenseData, budgetId, eventId, userId) => {
             budgetId,
             eventId,
             userId,
-            expenseId: '', // Will be updated with doc ID
+            expenseId: '',
             paidStatus: expenseData.paidStatus || false,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -125,8 +125,10 @@ export const createExpense = async (expenseData, budgetId, eventId, userId) => {
         // Update with the generated ID
         await updateDoc(docRef, { expenseId: docRef.id });
 
-        // Recalculate budget
-        await recalculateBudget(budgetId);
+        // Recalculate budget totals in Firestore — non-fatal: Redux handles it locally too
+        try { await recalculateBudget(budgetId); } catch (e) {
+            console.warn('Budget recalculation skipped (will sync on next load):', e.message);
+        }
 
         return { success: true, id: docRef.id };
     } catch (error) {
@@ -185,8 +187,10 @@ export const updateExpense = async (expenseId, expenseData, budgetId) => {
             updatedAt: serverTimestamp(),
         });
 
-        // Recalculate budget
-        await recalculateBudget(budgetId);
+        // Non-fatal recalculation
+        try { await recalculateBudget(budgetId); } catch (e) {
+            console.warn('Budget recalculation skipped:', e.message);
+        }
 
         return { success: true };
     } catch (error) {
@@ -200,8 +204,10 @@ export const deleteExpense = async (expenseId, budgetId) => {
     try {
         await deleteDoc(doc(db, EXPENSES_COLLECTION, expenseId));
 
-        // Recalculate budget
-        await recalculateBudget(budgetId);
+        // Non-fatal recalculation
+        try { await recalculateBudget(budgetId); } catch (e) {
+            console.warn('Budget recalculation skipped:', e.message);
+        }
 
         return { success: true };
     } catch (error) {

@@ -59,6 +59,7 @@ const EventDetail = () => {
     const [formData, setFormData] = useState({});
     const [statusModal, setStatusModal] = useState({ open: false, newStatus: null });
 
+    // Initial load + cleanup
     useEffect(() => {
         loadEventData();
         return () => {
@@ -67,6 +68,29 @@ const EventDetail = () => {
             dispatch(clearBudget());
         };
     }, [eventId]);
+
+    // Re-fetch sub-data when browser tab regains visibility (user switched away & came back)
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible' && eventId && userData?.userId) {
+                const uid = userData.userId;
+                dispatch(fetchEventGuests(eventId, uid));
+                dispatch(fetchEventTasks(eventId, uid));
+                dispatch(fetchEventBudget(eventId, uid));
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [eventId, userData?.userId]);
+
+    // Re-fetch the relevant slice whenever the user switches to a tab
+    useEffect(() => {
+        if (!eventId || !userData?.userId) return;
+        const uid = userData.userId;
+        if (activeTab === 'guests') dispatch(fetchEventGuests(eventId, uid));
+        if (activeTab === 'tasks') dispatch(fetchEventTasks(eventId, uid));
+        if (activeTab === 'budget') dispatch(fetchEventBudget(eventId, uid));
+    }, [activeTab]);
 
     const loadEventData = async () => {
         try {
