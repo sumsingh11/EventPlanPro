@@ -46,24 +46,9 @@ const Dashboard = () => {
     const [eventGuestCounts, setEventGuestCounts] = useState({});
     const [announcement, setAnnouncementData] = useState(null);
     const [reminderBanners, setReminderBanners] = useState([]);
-
-    // Use ALL user events for reminders — not the tab-filtered list
-    const allUserEvents = useSelector(state => state.events.events);
-
-    // Build reminder banners when events load — uses ALL events, not just tab-filtered
-    useEffect(() => {
-        if (allUserEvents.length === 0) return;
-        const dismissed = JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]');
-        const all = checkEventReminders(allUserEvents);
-        setReminderBanners(all.filter(r => !dismissed.includes(r.id)));
-    }, [allUserEvents]);
-
-    const dismissReminder = (id) => {
-        const saved = JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]');
-        const next = [...new Set([...saved, id])];
-        localStorage.setItem('epp_dismissed_reminders', JSON.stringify(next));
-        setReminderBanners(prev => prev.filter(r => r.id !== id));
-    };
+    const [dismissedReminders, setDismissedReminders] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]'); } catch { return []; }
+    });
 
     useEffect(() => {
         if (userData?.userId) {
@@ -96,6 +81,21 @@ const Dashboard = () => {
         } catch (err) {
             // Non-critical — dashboard works without counts
         }
+    };
+
+    // Build and refresh reminder banners whenever events change
+    useEffect(() => {
+        if (events.length === 0) return;
+        const saved = JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]');
+        const all = checkEventReminders(events);
+        setReminderBanners(all.filter(r => !saved.includes(r.id)));
+    }, [events]);
+
+    const dismissReminder = (id) => {
+        const saved = JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]');
+        const next = [...new Set([...saved, id])];
+        localStorage.setItem('epp_dismissed_reminders', JSON.stringify(next));
+        setReminderBanners(prev => prev.filter(r => r.id !== id));
     };
 
     const handleSearch = (e) => dispatch(setSearchQuery(e.target.value));
@@ -288,138 +288,121 @@ const Dashboard = () => {
                         const guestInfo = eventGuestCounts[event.id];
 
                         return (
-                            <Card
-                                key={event.id}
-                                className="hover:shadow-lg transition-shadow overflow-hidden p-0 border-t-0"
-                                style={{ backgroundColor: `${event.color}08` }}
-                            >
-                                {/* Colored header strip — shows event colour prominently */}
-                                {!event.thumbnail && (
-                                    <div
-                                        className="h-14 flex items-end px-5 pb-2"
-                                        style={{ background: `linear-gradient(135deg, ${event.color || '#6366f1'} 0%, ${event.color || '#6366f1'}bb 100%)` }}
-                                    >
-                                        <div className="overflow-hidden">
-                                            <p className="text-white font-semibold text-sm leading-tight truncate">{event.name}</p>
-                                            <p className="text-white/75 text-[10px] truncate">{event.type}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Thumbnail (replaces header strip when present) */}
+                            <Card key={event.id} className="hover:shadow-lg transition-shadow" style={{ borderLeft: `4px solid ${event.color || '#6366f1'}` }}>
+                                {/* Thumbnail */}
                                 {event.thumbnail && (
-                                    <div className="relative h-32 overflow-hidden">
+                                    <div className="mb-3 -mx-6 -mt-6 rounded-t-xl overflow-hidden h-32">
                                         <img src={event.thumbnail} alt={event.name} className="w-full h-full object-cover" />
-                                        <div className="absolute bottom-0 left-0 right-0 px-5 py-2" style={{ background: `linear-gradient(to top, ${event.color || '#6366f1'}cc, transparent)` }}>
-                                            <p className="text-white font-semibold text-sm truncate">{event.name}</p>
-                                        </div>
                                     </div>
                                 )}
 
-                                <div className="p-5">
-                                    {/* Status badge */}
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${badge.bg} ${badge.text}`}>
-                                            <BadgeIcon size={12} />
-                                            {badge.label}
-                                        </span>
-                                        <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                                            {event.type}
-                                        </span>
+                                {/* Status badge */}
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${badge.bg} ${badge.text}`}>
+                                        <BadgeIcon size={12} />
+                                        {badge.label}
+                                    </span>
+                                    <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                                        {event.type}
+                                    </span>
+                                </div>
+
+                                {/* Event name */}
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 truncate">
+                                    {event.name}
+                                </h3>
+
+                                {/* Details */}
+                                <div className="space-y-1.5 mb-3 text-sm">
+                                    <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                        <FiCalendar className="mr-2 flex-shrink-0" size={14} />
+                                        {formatDate(event.date)} at {event.time}
                                     </div>
 
-                                    {/* Event name */}
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 truncate">
-                                        {event.name}
-                                    </h3>
-
-                                    {/* Details */}
-                                    <div className="space-y-1.5 mb-3 text-sm">
+                                    {event.location && (
                                         <div className="flex items-center text-gray-600 dark:text-gray-400">
-                                            <FiCalendar className="mr-2 flex-shrink-0" size={14} />
-                                            {formatDate(event.date)} at {event.time}
+                                            <FiMapPin className="mr-2 flex-shrink-0" size={14} />
+                                            <span className="truncate">{event.location}</span>
                                         </div>
+                                    )}
 
-                                        {event.location && (
-                                            <div className="flex items-center text-gray-600 dark:text-gray-400">
-                                                <FiMapPin className="mr-2 flex-shrink-0" size={14} />
-                                                <span className="truncate">{event.location}</span>
-                                            </div>
-                                        )}
+                                    {/* Guest summary */}
+                                    <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                        <FiUsers className="mr-2 flex-shrink-0" size={14} />
+                                        {guestInfo
+                                            ? `${guestInfo.total} guests (${guestInfo.attending} confirmed)`
+                                            : `Capacity: ${event.guestLimit || '—'}`
+                                        }
+                                    </div>
 
-                                        {/* Guest summary */}
+                                    {/* Budget summary */}
+                                    {event.budgetLimit && (
                                         <div className="flex items-center text-gray-600 dark:text-gray-400">
-                                            <FiUsers className="mr-2 flex-shrink-0" size={14} />
-                                            {guestInfo
-                                                ? `${guestInfo.total} guests (${guestInfo.attending} confirmed)`
-                                                : `Capacity: ${event.guestLimit || '—'}`
-                                            }
+                                            <FiDollarSign className="mr-2 flex-shrink-0" size={14} />
+                                            Budget: ${event.budgetLimit}
                                         </div>
+                                    )}
 
-                                        {/* Budget summary */}
-                                        {event.budgetLimit && (
-                                            <div className="flex items-center text-gray-600 dark:text-gray-400">
-                                                <FiDollarSign className="mr-2 flex-shrink-0" size={14} />
-                                                Budget: ${event.budgetLimit}
-                                            </div>
-                                        )}
-
-                                        {/* Guest Capacity Counter */}
-                                        {event.guestLimit && guestInfo && (
-                                            <div className="flex items-center gap-1">
-                                                <FiUsers className="flex-shrink-0 text-gray-500" size={14} />
-                                                <span className="text-xs font-medium">
-                                                    <span className={guestInfo.total >= parseInt(event.guestLimit) ? 'text-red-500' : 'text-green-600 dark:text-green-400'}>
-                                                        {guestInfo.total}
-                                                    </span>
-                                                    <span className="text-gray-400"> / {event.guestLimit} capacity</span>
+                                    {/* Guest Capacity Counter */}
+                                    {event.guestLimit && guestInfo && (
+                                        <div className="flex items-center gap-1">
+                                            <FiUsers className="flex-shrink-0 text-gray-500" size={14} />
+                                            <span className="text-xs font-medium">
+                                                <span className={guestInfo.total >= parseInt(event.guestLimit) ? 'text-red-500' : 'text-green-600 dark:text-green-400'}>
+                                                    {guestInfo.total}
                                                 </span>
-                                            </div>
-                                        )}
+                                                <span className="text-gray-400"> / {event.guestLimit} capacity</span>
+                                            </span>
+                                        </div>
+                                    )}
 
-                                        {/* Tags */}
-                                        {event.tags && event.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1">
-                                                {event.tags.slice(0, 2).map(tag => (
-                                                    <span key={tag} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{tag}</span>
-                                                ))}
-                                                {event.tags.length > 2 && <span className="text-[10px] text-gray-400">+{event.tags.length - 2}</span>}
-                                            </div>
-                                        )}
+                                    {/* Tags */}
+                                    {event.tags && event.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {event.tags.slice(0, 2).map(tag => (
+                                                <span key={tag} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{tag}</span>
+                                            ))}
+                                            {event.tags.length > 2 && <span className="text-[10px] text-gray-400">+{event.tags.length - 2}</span>}
+                                        </div>
+                                    )}
 
-                                    </div>
+                                    {/* Countdown — only for active events */}
+                                    {status === 'active' && (
+                                        <CountdownTimer date={event.date} time={event.time} variant="compact" />
+                                    )}
+                                </div>
 
-                                    {/* Actions */}
-                                    <div className="mt-4 flex gap-2">
-                                        <Button
-                                            variant="primary"
-                                            size="small"
-                                            onClick={() => navigate(`/events/${event.id}`)}
-                                            className="flex-1 flex items-center justify-center gap-1"
-                                        >
-                                            <FiEdit size={14} />
-                                            View
-                                        </Button>
+                                {/* Actions */}
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="primary"
+                                        size="small"
+                                        onClick={() => navigate(`/events/${event.id}`)}
+                                        className="flex-1 flex items-center justify-center gap-1"
+                                    >
+                                        <FiEdit size={14} />
+                                        View
+                                    </Button>
 
-                                        <Button
-                                            variant="secondary"
-                                            size="small"
-                                            onClick={() => handleDuplicate(event)}
-                                            className="flex items-center justify-center gap-1"
-                                            title="Duplicate event"
-                                        >
-                                            <FiCopy size={14} />
-                                        </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="small"
+                                        onClick={() => handleDuplicate(event)}
+                                        className="flex items-center justify-center gap-1"
+                                        title="Duplicate event"
+                                    >
+                                        <FiCopy size={14} />
+                                    </Button>
 
-                                        <Button
-                                            variant="danger"
-                                            size="small"
-                                            onClick={() => handleDeleteClick(event)}
-                                            className="flex items-center justify-center gap-1"
-                                            title="Delete event"
-                                        >
-                                            <FiTrash2 size={14} />
-                                        </Button>
-                                    </div>
+                                    <Button
+                                        variant="danger"
+                                        size="small"
+                                        onClick={() => handleDeleteClick(event)}
+                                        className="flex items-center justify-center gap-1"
+                                        title="Delete event"
+                                    >
+                                        <FiTrash2 size={14} />
+                                    </Button>
                                 </div>
                             </Card>
                         );

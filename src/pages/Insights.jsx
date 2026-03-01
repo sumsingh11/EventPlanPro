@@ -52,14 +52,8 @@ const StatCard = ({ label, value, sub, icon: Icon, color }) => (
 const Insights = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-
-    // Get BOTH the auth user object (uid) and userData (userId field)
-    const { userData, user } = useSelector(state => state.auth);
-
-    // Resolve userId robustly — userData.userId and user.uid should match
-    const userId = userData?.userId || user?.uid;
-
-    // Use ALL events for the current user (already scoped by fetchEvents(userId))
+    const { userData } = useSelector(state => state.auth);
+    // Use raw events list — not filtered by search/tab/sort from dashboard state
     const events = useSelector(state => state.events.events);
 
     const [tasks, setTasks] = useState([]);
@@ -68,25 +62,19 @@ const Insights = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!userId) return;
-
-        console.log('[Insights] Loading data for userId:', userId);
-
-        // Fetch events into Redux (already user-scoped via where('userId', '==', userId))
-        dispatch(fetchEvents(userId));
-
-        // Fetch tasks, guests, expenses — all scoped by userId
+        if (!userData?.userId) return;
+        dispatch(fetchEvents(userData.userId));
         Promise.all([
-            getUserTasks(userId).catch(() => []),
-            getUserGuests(userId).catch(() => []),
-            getUserExpenses(userId).catch(() => []),
+            getUserTasks(userData.userId).catch(() => []),
+            getUserGuests(userData.userId).catch(() => []),
+            getUserExpenses(userData.userId).catch(() => []),
         ]).then(([t, g, e]) => {
             setTasks(t);
             setGuests(g);
             setExpenses(e);
             setLoading(false);
         });
-    }, [dispatch, userId]);
+    }, [dispatch, userData]);
 
     if (loading) return <Loading text="Loading insights..." />;
 
