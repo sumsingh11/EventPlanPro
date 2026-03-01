@@ -67,14 +67,20 @@ export const registerUser = async (userData) => {
     }
 };
 
-// Login user
+// Login user — requires a registered Firestore user document to exist
 export const loginUser = async (email, password) => {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        const userData = userDoc.data();
-        return { success: true, user, userData };
+
+        if (!userDoc.exists()) {
+            // Auth account exists but no Firestore profile — force them to register
+            await signOut(auth);
+            throw new Error('No account found. Please register first.');
+        }
+
+        return { success: true, user, userData: userDoc.data() };
     } catch (error) {
         console.error('Login error:', error);
         throw error;
@@ -104,6 +110,14 @@ export const getUserData = async (userId) => {
         console.error('Error fetching user data:', error);
         throw error;
     }
+};
+
+// ensureUserDocument — only used to check existence, never auto-creates
+export const ensureUserDocument = async (userId) => {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists()) return userDoc.data();
+    // No document = user deleted from DB without re-registering; return null so caller handles it
+    return null;
 };
 
 // Update user profile (name fields) in Firestore

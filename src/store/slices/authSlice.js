@@ -104,6 +104,12 @@ export const googleLogin = () => async (dispatch) => {
 export const fetchUserData = (userId) => async (dispatch) => {
     try {
         const userData = await getUserData(userId);
+        if (!userData) {
+            // User exists in Auth but not in Firestore (e.g. after DB wipe) — force logout
+            await logoutUser();
+            dispatch(setUser(null));
+            return { success: false, error: 'Account not found. Please register.' };
+        }
         dispatch(setUser({ user: { uid: userId }, userData }));
         return { success: true };
     } catch (error) {
