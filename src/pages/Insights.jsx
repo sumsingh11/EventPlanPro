@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchEvents, selectFilteredEvents } from '../store/slices/eventSlice';
+import { fetchEvents } from '../store/slices/eventSlice';
 import { getUserExpenses } from '../services/budgetService';
 import { getUserTasks } from '../services/taskService';
 import { getUserGuests } from '../services/guestService';
@@ -53,7 +53,8 @@ const Insights = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { userData } = useSelector(state => state.auth);
-    const events = useSelector(selectFilteredEvents);
+    // Use ALL events for the current user (not tab-filtered)
+    const events = useSelector(state => state.events.events);
 
     const [tasks, setTasks] = useState([]);
     const [guests, setGuests] = useState([]);
