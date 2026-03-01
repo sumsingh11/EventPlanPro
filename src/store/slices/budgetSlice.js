@@ -56,6 +56,13 @@ const budgetSlice = createSlice({
             state.budget = null;
             state.expenses = [];
         },
+        // Recalculate budget totals from current expenses array (no Firestore read)
+        recalculateTotalsFromExpenses: (state) => {
+            if (!state.budget) return;
+            const total = state.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+            state.budget.totalSpent = total;
+            state.budget.remainingBudget = (state.budget.totalBudget || 0) - total;
+        },
     },
 });
 
@@ -69,6 +76,7 @@ export const {
     setLoading,
     setError,
     clearBudget,
+    recalculateTotalsFromExpenses,
 } = budgetSlice.actions;
 
 // Thunks
@@ -122,10 +130,10 @@ export const addNewExpense = (expenseData, budgetId, eventId, userId) => async (
             userId
         };
         dispatch(addExpense(newExpense));
-
-        // Recalculate budget totals locally
+        // Immediately recalculate totals from in-memory expenses
+        dispatch(recalculateTotalsFromExpenses());
+        // Also async-refresh from Firestore for accuracy
         dispatch(fetchEventBudget(eventId, userId));
-
         return { success: true, id: result.id };
     } catch (error) {
         dispatch(setError(error.message));
@@ -137,10 +145,8 @@ export const modifyExpense = (expenseId, expenseData, budgetId, eventId, userId)
     try {
         await updateExpense(expenseId, expenseData, budgetId);
         dispatch(updateExpenseInState({ id: expenseId, ...expenseData }));
-
-        // Recalculate budget totals
+        dispatch(recalculateTotalsFromExpenses());
         dispatch(fetchEventBudget(eventId, userId));
-
         return { success: true };
     } catch (error) {
         dispatch(setError(error.message));
@@ -152,10 +158,8 @@ export const deleteExpenseById = (expenseId, budgetId, eventId, userId) => async
     try {
         await deleteExpense(expenseId, budgetId);
         dispatch(removeExpense(expenseId));
-
-        // Recalculate budget totals
+        dispatch(recalculateTotalsFromExpenses());
         dispatch(fetchEventBudget(eventId, userId));
-
         return { success: true };
     } catch (error) {
         dispatch(setError(error.message));

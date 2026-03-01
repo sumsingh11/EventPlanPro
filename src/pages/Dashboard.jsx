@@ -24,7 +24,7 @@ import { formatDate } from '../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { getAnnouncement } from '../services/announcementService';
-import { checkEventReminders } from '../services/reminderService';
+import { checkEventReminders, checkTaskReminders } from '../services/reminderService';
 
 const STATUS_BADGES = {
     active: { label: 'Active', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', icon: FiClock },
@@ -41,6 +41,7 @@ const Dashboard = () => {
     const activeCount = useSelector(selectActiveEventCount);
     const historyCount = useSelector(selectHistoryEventCount);
     const { loading, searchQuery, filterType, statusFilter } = useSelector(state => state.events);
+    const allTasks = useSelector(state => state.tasks.tasks);
 
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, eventId: null, eventName: '' });
     const [eventGuestCounts, setEventGuestCounts] = useState({});
@@ -83,13 +84,14 @@ const Dashboard = () => {
         }
     };
 
-    // Build and refresh reminder banners whenever events change
+    // Build and refresh reminder banners whenever events or tasks change
     useEffect(() => {
-        if (events.length === 0) return;
         const saved = JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]');
-        const all = checkEventReminders(events);
+        const eventReminders = events.length > 0 ? checkEventReminders(events) : [];
+        const taskReminders = allTasks.length > 0 ? checkTaskReminders(allTasks) : [];
+        const all = [...eventReminders, ...taskReminders];
         setReminderBanners(all.filter(r => !saved.includes(r.id)));
-    }, [events]);
+    }, [events, allTasks]);
 
     const dismissReminder = (id) => {
         const saved = JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]');

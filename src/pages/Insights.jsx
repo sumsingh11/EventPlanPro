@@ -9,6 +9,7 @@ import { FiTrendingUp, FiCalendar, FiUsers, FiDollarSign, FiCheckSquare, FiAlert
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Loading from '../components/ui/Loading';
+import CountdownTimer from '../components/ui/CountdownTimer';
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#f97316', '#14b8a6'];
 
@@ -261,6 +262,7 @@ const Insights = () => {
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{ev.name}</p>
                                             <p className="text-xs text-gray-500">{eventDate.toLocaleDateString()} · {ev.type}</p>
+                                            <CountdownTimer date={ev.date} time={ev.time} variant="compact" />
                                         </div>
                                         <div className="text-right flex-shrink-0">
                                             <p className={`text-sm font-semibold ${diffDays <= 1 ? 'text-red-500' : diffDays <= 7 ? 'text-amber-500' : 'text-gray-500'}`}>

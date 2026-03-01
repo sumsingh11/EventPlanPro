@@ -12,7 +12,7 @@ import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter, FiImage, FiCheck, FiCalendar, FiExternalLink } from 'react-icons/fi';
+import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter, FiImage, FiCheck, FiCalendar, FiExternalLink, FiAlertTriangle } from 'react-icons/fi';
 
 const EVENT_COLORS = [
     { name: 'Indigo', value: '#6366f1' },
@@ -50,6 +50,7 @@ const EventDetail = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { userData } = useSelector(state => state.auth);
+    const { budget } = useSelector(state => state.budget);
 
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -251,6 +252,14 @@ const EventDetail = () => {
             <div>
                 {activeTab === 'overview' && (
                     <Card>
+                        {/* Event colour accent bar */}
+                        {event.color && (
+                            <div
+                                className="-mx-6 -mt-6 mb-5 h-1.5 rounded-t-lg"
+                                style={{ backgroundColor: event.color }}
+                            />
+                        )}
+
                         {editMode ? (
                             <div>
                                 <Input
@@ -323,8 +332,11 @@ const EventDetail = () => {
                                         {EVENT_COLORS.map(c => (
                                             <button key={c.value} type="button" title={c.name}
                                                 onClick={() => setFormData(p => ({ ...p, color: c.value }))}
-                                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
-                                                style={{ backgroundColor: c.value, borderColor: formData.color === c.value ? '#1e293b' : 'transparent' }}
+                                                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110 ${formData.color === c.value
+                                                    ? 'ring-2 ring-offset-2 ring-gray-600 dark:ring-white dark:ring-offset-gray-800'
+                                                    : 'border-transparent'
+                                                    }`}
+                                                style={{ backgroundColor: c.value }}
                                             >
                                                 {formData.color === c.value && <FiCheck size={12} color="white" />}
                                             </button>
@@ -432,6 +444,16 @@ const EventDetail = () => {
                                     Add to Google Calendar
                                     <FiExternalLink size={12} />
                                 </a>
+
+                                {/* Budget Exceeded Warning in Overview */}
+                                {event.budgetLimit && budget && budget.totalSpent > parseFloat(event.budgetLimit) && (
+                                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+                                        <FiAlertTriangle className="text-red-500 flex-shrink-0" size={18} />
+                                        <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                                            ⚠️ Budget exceeded — spent ${budget.totalSpent.toFixed(2)} of ${parseFloat(event.budgetLimit).toFixed(2)} limit.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
