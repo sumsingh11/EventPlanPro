@@ -12,13 +12,30 @@ import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter, FiImage } from 'react-icons/fi';
+import { FiEdit, FiArrowLeft, FiUsers, FiCheckSquare, FiDollarSign, FiCheckCircle, FiXCircle, FiPrinter, FiImage, FiCheck, FiCalendar, FiExternalLink } from 'react-icons/fi';
+
+const EVENT_COLORS = [
+    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Violet', value: '#8b5cf6' },
+    { name: 'Rose', value: '#f43f5e' },
+    { name: 'Amber', value: '#f59e0b' },
+    { name: 'Emerald', value: '#10b981' },
+    { name: 'Sky', value: '#0ea5e9' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Teal', value: '#14b8a6' },
+];
+
+const EVENT_TAGS = [
+    'Rustic', 'Luxury', 'Modern', 'Boho', 'Formal',
+    'Minimalist', 'Corporate', 'Traditional', 'Destination', 'Casual', 'Other'
+];
 import GuestList from '../components/guest/GuestList';
 import TaskList from '../components/task/TaskList';
 import BudgetOverview from '../components/budget/BudgetOverview';
 import EventMedia from '../components/media/EventMedia';
 import { formatDate } from '../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
+import CountdownTimer from '../components/ui/CountdownTimer';
 
 const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
 
@@ -295,20 +312,42 @@ const EventDetail = () => {
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    <Input
-                                        label="Venue Capacity"
-                                        type="number"
-                                        name="guestLimit"
-                                        value={formData.guestLimit || ''}
-                                        onChange={handleChange}
-                                    />
-                                    <Input
-                                        label="Budget Limit ($)"
-                                        type="number"
-                                        name="budgetLimit"
-                                        value={formData.budgetLimit || ''}
-                                        onChange={handleChange}
-                                    />
+                                    <Input label="Venue Capacity" type="number" name="guestLimit" value={formData.guestLimit || ''} onChange={handleChange} />
+                                    <Input label="Budget Limit ($)" type="number" name="budgetLimit" value={formData.budgetLimit || ''} onChange={handleChange} />
+                                </div>
+
+                                {/* Color Picker */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Color</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {EVENT_COLORS.map(c => (
+                                            <button key={c.value} type="button" title={c.name}
+                                                onClick={() => setFormData(p => ({ ...p, color: c.value }))}
+                                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                                                style={{ backgroundColor: c.value, borderColor: formData.color === c.value ? '#1e293b' : 'transparent' }}
+                                            >
+                                                {formData.color === c.value && <FiCheck size={12} color="white" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Tags */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {EVENT_TAGS.map(tag => {
+                                            const selected = (formData.tags || []).includes(tag);
+                                            return (
+                                                <button key={tag} type="button"
+                                                    onClick={() => setFormData(p => ({ ...p, tags: selected ? (p.tags || []).filter(t => t !== tag) : [...(p.tags || []), tag] }))}
+                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${selected ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
 
                                 <div className="flex gap-4 mt-6">
@@ -364,6 +403,35 @@ const EventDetail = () => {
                                         <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{event.rules}</p>
                                     </div>
                                 )}
+
+                                {/* Countdown Timer */}
+                                <div className="pt-2">
+                                    <CountdownTimer date={event.date} time={event.time} variant="full" />
+                                </div>
+
+                                {/* Tags display */}
+                                {event.tags && event.tags.length > 0 && (
+                                    <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tags</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {event.tags.map(tag => (
+                                                <span key={tag} className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">{tag}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Google Calendar Button */}
+                                <a
+                                    href={`https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(event.name)}&dates=${(event.date || '').replace(/-/g, '')}T${(event.time || '0900').replace(':', '')}00/${(event.date || '').replace(/-/g, '')}T${(event.time || '0900').replace(':', '')}00&location=${encodeURIComponent(event.location || '')}&details=${encodeURIComponent(event.description || '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800 transition-colors w-fit"
+                                >
+                                    <FiCalendar size={16} />
+                                    Add to Google Calendar
+                                    <FiExternalLink size={12} />
+                                </a>
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>

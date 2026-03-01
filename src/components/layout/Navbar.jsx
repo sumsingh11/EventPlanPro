@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { signOut } from '../../store/slices/authSlice';
 import { toggleDarkMode } from '../../store/slices/settingsSlice';
 import { getAnnouncement } from '../../services/announcementService';
-import { FiMenu, FiX, FiSun, FiMoon, FiLogOut, FiHome, FiSettings, FiShield, FiBell } from 'react-icons/fi';
+import { FiMenu, FiX, FiSun, FiMoon, FiLogOut, FiHome, FiSettings, FiShield, FiBell, FiTrendingUp } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Logo from '../ui/Logo';
 
@@ -54,12 +54,14 @@ const Navbar = () => {
                     {/* Desktop Navigation */}
                     {isAuthenticated && (
                         <div className="hidden md:flex items-center space-x-4">
-                            <Link
-                                to="/dashboard"
-                                className="flex items-center space-x-1 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            >
+                            <Link to="/dashboard" className="flex items-center space-x-1 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                 <FiHome size={18} />
                                 <span>Dashboard</span>
+                            </Link>
+
+                            <Link to="/insights" className="flex items-center space-x-1 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                <FiTrendingUp size={18} />
+                                <span>Insights</span>
                             </Link>
 
                             <Link

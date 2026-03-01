@@ -20,9 +20,11 @@ import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Modal from '../components/ui/Modal';
 import { FiPlus, FiCalendar, FiMapPin, FiUsers, FiDollarSign, FiEdit, FiTrash2, FiCopy, FiSearch, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
-import { formatDate, getCountdown } from '../utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
+import CountdownTimer from '../components/ui/CountdownTimer';
 import { getAnnouncement } from '../services/announcementService';
+import { checkEventReminders } from '../services/reminderService';
 
 const STATUS_BADGES = {
     active: { label: 'Active', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', icon: FiClock },
@@ -43,6 +45,10 @@ const Dashboard = () => {
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, eventId: null, eventName: '' });
     const [eventGuestCounts, setEventGuestCounts] = useState({});
     const [announcement, setAnnouncementData] = useState(null);
+    const [reminderBanners, setReminderBanners] = useState([]);
+    const [dismissedReminders, setDismissedReminders] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('epp_dismissed_reminders') || '[]'); } catch { return []; }
+    });
 
     useEffect(() => {
         if (userData?.userId) {
@@ -54,9 +60,7 @@ const Dashboard = () => {
             if (ann) {
                 const STORAGE_KEY = 'eventplanpro_inbox_read';
                 const readTimestamp = localStorage.getItem(STORAGE_KEY);
-                if (readTimestamp !== ann.updatedAt) {
-                    setAnnouncementData(ann);
-                }
+                if (readTimestamp !== ann.updatedAt) setAnnouncementData(ann);
             }
         }).catch(() => { });
     }, [dispatch, userData]);
@@ -109,6 +113,14 @@ const Dashboard = () => {
 
     return (
         <div>
+            {/* Reminder Banners (in-app notifications) */}
+            {reminderBanners.map(r => (
+                <div key={r.id} className={`mb-3 p-3 rounded-lg flex items-start gap-3 border ${r.urgent ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'}`}>
+                    <p className={`flex-1 text-sm font-medium ${r.urgent ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}`}>{r.message}</p>
+                    <button onClick={() => dismissReminder(r.id)} className="text-gray-400 hover:text-gray-600 flex-shrink-0 text-lg leading-none">&times;</button>
+                </div>
+            ))}
+
             {/* System Announcement Banner */}
             {announcement && (
                 <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-3">
@@ -255,14 +267,13 @@ const Dashboard = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {events.map((event) => {
-                        const countdown = getCountdown(event.date);
                         const status = event.status || 'active';
                         const badge = STATUS_BADGES[status] || STATUS_BADGES.active;
                         const BadgeIcon = badge.icon;
                         const guestInfo = eventGuestCounts[event.id];
 
                         return (
-                            <Card key={event.id} className="hover:shadow-lg transition-shadow">
+                            <Card key={event.id} className="hover:shadow-lg transition-shadow" style={{ borderLeft: `4px solid ${event.color || '#6366f1'}` }}>
                                 {/* Thumbnail */}
                                 {event.thumbnail && (
                                     <div className="mb-3 -mx-6 -mt-6 rounded-t-xl overflow-hidden h-32">
@@ -317,11 +328,32 @@ const Dashboard = () => {
                                         </div>
                                     )}
 
-                                    {/* Countdown — only for active events */}
-                                    {status === 'active' && !countdown.isPast && (
-                                        <div className="text-sm font-medium text-primary-600 dark:text-primary-400">
-                                            🎉 {countdown.message}
+                                    {/* Guest Capacity Counter */}
+                                    {event.guestLimit && guestInfo && (
+                                        <div className="flex items-center gap-1">
+                                            <FiUsers className="flex-shrink-0 text-gray-500" size={14} />
+                                            <span className="text-xs font-medium">
+                                                <span className={guestInfo.total >= parseInt(event.guestLimit) ? 'text-red-500' : 'text-green-600 dark:text-green-400'}>
+                                                    {guestInfo.total}
+                                                </span>
+                                                <span className="text-gray-400"> / {event.guestLimit} capacity</span>
+                                            </span>
                                         </div>
+                                    )}
+
+                                    {/* Tags */}
+                                    {event.tags && event.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {event.tags.slice(0, 2).map(tag => (
+                                                <span key={tag} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{tag}</span>
+                                            ))}
+                                            {event.tags.length > 2 && <span className="text-[10px] text-gray-400">+{event.tags.length - 2}</span>}
+                                        </div>
+                                    )}
+
+                                    {/* Countdown — only for active events */}
+                                    {status === 'active' && (
+                                        <CountdownTimer date={event.date} time={event.time} variant="compact" />
                                     )}
                                 </div>
 

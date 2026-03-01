@@ -60,6 +60,14 @@ service cloud.firestore {
                       request.resource.data.userId == request.auth.uid;
       allow update: if isOwner(resource.data.userId) || isAdmin();
       allow delete: if isOwner(resource.data.userId) || isAdmin();
+
+      // Task comments subcollection
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+        allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        allow update: if false; // comments are immutable
+      }
     }
     
     // Budgets collection

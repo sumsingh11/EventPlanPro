@@ -8,9 +8,34 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { validateRequired, validateFutureDate, validateFutureDatetime } from '../utils/validation';
 import { SUCCESS_MESSAGES } from '../utils/notifications';
-import { FiUpload, FiX } from 'react-icons/fi';
+import { FiUpload, FiX, FiCheck } from 'react-icons/fi';
 
 const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
+
+const EVENT_COLORS = [
+    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Violet', value: '#8b5cf6' },
+    { name: 'Rose', value: '#f43f5e' },
+    { name: 'Amber', value: '#f59e0b' },
+    { name: 'Emerald', value: '#10b981' },
+    { name: 'Sky', value: '#0ea5e9' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Teal', value: '#14b8a6' },
+];
+
+const EVENT_TAGS = [
+    { label: 'Rustic', style: 'Outdoor', budget: 'Budget' },
+    { label: 'Luxury', style: 'Beach', budget: 'Premium' },
+    { label: 'Modern', style: 'Indoor', budget: 'Mid-Range' },
+    { label: 'Boho', style: 'Garden', budget: 'Mid-Range' },
+    { label: 'Formal', style: 'Banquet Hall', budget: 'Premium' },
+    { label: 'Minimalist', style: 'Home', budget: 'Budget' },
+    { label: 'Corporate', style: 'Office', budget: 'Sponsored' },
+    { label: 'Traditional', style: 'Community Hall', budget: 'Mid-Range' },
+    { label: 'Destination', style: 'Resort', budget: 'Luxury' },
+    { label: 'Casual', style: 'Backyard', budget: 'Budget' },
+    { label: 'Other', style: 'Custom', budget: 'Flexible' },
+];
 
 const CreateEvent = () => {
     const dispatch = useDispatch();
@@ -29,9 +54,11 @@ const CreateEvent = () => {
         rules: '',
         guestLimit: '',
         budgetLimit: '',
+        color: '#6366f1',
+        tags: [],
     });
 
-    const [thumbnail, setThumbnail] = useState(null); // base64 string
+    const [thumbnail, setThumbnail] = useState(null);
     const [thumbnailPreview, setThumbnailPreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -42,15 +69,29 @@ const CreateEvent = () => {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
+    const handleColorSelect = (color) => {
+        setFormData(prev => ({ ...prev, color }));
+    };
+
+    const handleTagToggle = (tag) => {
+        setFormData(prev => {
+            const exists = prev.tags.includes(tag.label);
+            return {
+                ...prev,
+                tags: exists
+                    ? prev.tags.filter(t => t !== tag.label)
+                    : [...prev.tags, tag.label],
+            };
+        });
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         if (file.size > 500 * 1024) {
             setErrors(prev => ({ ...prev, thumbnail: 'Image must be smaller than 500KB' }));
             return;
         }
-
         const reader = new FileReader();
         reader.onloadend = () => {
             setThumbnail(reader.result);
@@ -86,12 +127,10 @@ const CreateEvent = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
-
         setLoading(true);
         const eventData = { ...formData, thumbnail: thumbnail || null };
         const result = await dispatch(addNewEvent(eventData, userData.userId));
         setLoading(false);
-
         if (result.success) {
             dispatch(showNotification(SUCCESS_MESSAGES.EVENT_CREATED, 'success'));
             navigate('/dashboard');
@@ -112,29 +151,19 @@ const CreateEvent = () => {
 
                     {/* Thumbnail Upload */}
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Event Thumbnail <span className="text-gray-400 text-xs">(optional, max 500KB)</span>
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Thumbnail</label>
                         {thumbnailPreview ? (
-                            <div className="relative inline-block">
-                                <img
-                                    src={thumbnailPreview}
-                                    alt="Thumbnail preview"
-                                    className="w-32 h-32 object-cover rounded-xl border-2 border-primary-300"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={removeThumbnail}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
-                                >
+                            <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
+                                <img src={thumbnailPreview} alt="preview" className="w-full h-full object-cover" />
+                                <button type="button" onClick={removeThumbnail} className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full">
                                     <FiX size={14} />
                                 </button>
                             </div>
                         ) : (
-                            <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-primary-400 transition-colors">
-                                <FiUpload className="text-gray-400 mb-1" size={24} />
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Upload</span>
-                                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                <FiUpload className="text-gray-400 mb-2" size={24} />
+                                <span className="text-sm text-gray-500">Click to upload thumbnail (max 500KB)</span>
+                                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
                             </label>
                         )}
                         {errors.thumbnail && <p className="text-red-500 text-xs mt-1">{errors.thumbnail}</p>}
@@ -188,8 +217,56 @@ const CreateEvent = () => {
                             </label>
                             <input type="number" name="guestLimit" value={formData.guestLimit} onChange={handleChange} placeholder="100" min="1" className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.guestLimit ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                             {errors.guestLimit && <p className="text-red-500 text-xs mt-1">{errors.guestLimit}</p>}
+                            {formData.guestLimit && (
+                                <p className="text-xs text-gray-400 mt-1">Guest count will be tracked against this limit in the Guests tab.</p>
+                            )}
                         </div>
                         <Input label="Budget Limit ($)" type="number" name="budgetLimit" value={formData.budgetLimit} onChange={handleChange} placeholder="5000" min="0" step="0.01" />
+                    </div>
+
+                    {/* Event Color */}
+                    <div className="mb-5">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Color</label>
+                        <div className="flex gap-2 flex-wrap">
+                            {EVENT_COLORS.map(c => (
+                                <button
+                                    key={c.value}
+                                    type="button"
+                                    title={c.name}
+                                    onClick={() => handleColorSelect(c.value)}
+                                    className="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                                    style={{
+                                        backgroundColor: c.value,
+                                        borderColor: formData.color === c.value ? '#1e293b' : 'transparent',
+                                    }}
+                                >
+                                    {formData.color === c.value && <FiCheck size={14} color="white" />}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">This color will appear as an accent on your event card.</p>
+                    </div>
+
+                    {/* Event Tags */}
+                    <div className="mb-5">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Tags <span className="text-gray-400 font-normal">(optional)</span></label>
+                        <div className="flex flex-wrap gap-2">
+                            {EVENT_TAGS.map(tag => {
+                                const selected = formData.tags.includes(tag.label);
+                                return (
+                                    <button
+                                        key={tag.label}
+                                        type="button"
+                                        onClick={() => handleTagToggle(tag)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected
+                                            ? 'bg-primary-600 text-white border-primary-600'
+                                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-primary-400'}`}
+                                    >
+                                        {tag.label} · {tag.style} · {tag.budget}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     {/* Actions */}

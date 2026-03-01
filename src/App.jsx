@@ -20,6 +20,7 @@ import Settings from './pages/Settings';
 import Admin from './pages/Admin';
 import Inbox from './pages/Inbox';
 import NotFound from './pages/NotFound';
+import Insights from './pages/Insights';
 
 function App() {
   const dispatch = useDispatch();
@@ -75,6 +76,7 @@ function App() {
           <Route path="/events/:eventId" element={<EventDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/inbox" element={<Inbox />} />
+          <Route path="/insights" element={<Insights />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={

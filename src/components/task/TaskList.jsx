@@ -15,10 +15,11 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
-import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiChevronUp, FiChevronDown, FiMessageCircle } from 'react-icons/fi';
 import { validateRequired } from '../../utils/validation';
 import { formatDate } from '../../utils/dateUtils';
 import { SUCCESS_MESSAGES } from '../../utils/notifications';
+import TaskComments from './TaskComments';
 
 const PRIORITY_CONFIG = {
     high: { label: 'High', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300', sort: 0 },
@@ -47,16 +48,14 @@ const TaskList = ({ eventId }) => {
     });
     const [errors, setErrors] = useState({});
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
+    const [expandedTaskId, setExpandedTaskId] = useState(null);
 
     // Sort tasks: incomplete first, then by priority, then by due date
     const sortedTasks = [...tasks].sort((a, b) => {
-        // completed tasks go to the bottom
         if (a.status !== b.status) return a.status ? 1 : -1;
-        // then sort by priority
         const pa = PRIORITY_CONFIG[a.priority || 'medium']?.sort ?? 1;
         const pb = PRIORITY_CONFIG[b.priority || 'medium']?.sort ?? 1;
         if (pa !== pb) return pa - pb;
-        // then by due date
         return new Date(a.dueDate) - new Date(b.dueDate);
     });
 
@@ -115,7 +114,6 @@ const TaskList = ({ eventId }) => {
                         linkedTaskId: result.id,
                     };
 
-                    // Use existing budget or auto-create one first
                     let budgetId = budget?.id;
                     if (!budgetId) {
                         const budgetResult = await dispatch(createOrUpdateBudget(
@@ -156,7 +154,6 @@ const TaskList = ({ eventId }) => {
         setDeleteModal({ isOpen: false, taskId: null, taskTitle: '' });
     };
 
-    // Move task priority up/down
     const handlePriorityChange = async (task, direction) => {
         const priorities = ['high', 'medium', 'low'];
         const currentIdx = priorities.indexOf(task.priority || 'medium');
@@ -165,7 +162,6 @@ const TaskList = ({ eventId }) => {
         await dispatch(modifyTask(task.id, { priority: priorities[newIdx] }));
     };
 
-    // Budget summary across all tasks
     const totalTaskBudget = allTasks.reduce((sum, t) => sum + (parseFloat(t.taskBudget) || 0), 0);
 
     return (
@@ -217,67 +213,68 @@ const TaskList = ({ eventId }) => {
                     {sortedTasks.map((task) => {
                         const priorityCfg = PRIORITY_CONFIG[task.priority || 'medium'] || PRIORITY_CONFIG.medium;
                         return (
-                            <div
-                                key={task.id}
-                                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                            >
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    {/* Toggle checkbox */}
-                                    <button
-                                        onClick={() => handleToggle(task)}
-                                        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${task.status
-                                            ? 'bg-primary-600 border-primary-600'
-                                            : 'border-gray-300 dark:border-gray-600 hover:border-primary-600'
-                                            }`}
-                                    >
-                                        {task.status && <FiCheckCircle className="text-white" size={14} />}
-                                    </button>
+                            <div key={task.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg overflow-hidden">
+                                <div className="flex items-center justify-between p-3">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        {/* Checkbox */}
+                                        <button
+                                            onClick={() => handleToggle(task)}
+                                            className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${task.status
+                                                ? 'bg-primary-600 border-primary-600'
+                                                : 'border-gray-300 dark:border-gray-600 hover:border-primary-600'}`}
+                                        >
+                                            {task.status && <FiCheckCircle className="text-white" size={14} />}
+                                        </button>
 
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <p className={`text-gray-900 dark:text-gray-100 truncate ${task.status ? 'line-through opacity-60' : ''}`}>
-                                                {task.title}
+                                        {/* Task info — click to expand comments */}
+                                        <div
+                                            className="flex-1 min-w-0 cursor-pointer"
+                                            role="button"
+                                            onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                                        >
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className={`text-gray-900 dark:text-gray-100 truncate ${task.status ? 'line-through opacity-60' : ''}`}>
+                                                    {task.title}
+                                                </p>
+                                                <span className={`flex-shrink-0 px-1.5 py-0.5 text-[10px] font-semibold rounded ${priorityCfg.bg} ${priorityCfg.text}`}>
+                                                    {priorityCfg.label}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 flex-wrap">
+                                                <span>Due: {formatDate(task.dueDate)}</span>
+                                                {task.taskBudget > 0 && <span className="font-medium text-blue-600 dark:text-blue-400">${parseFloat(task.taskBudget).toFixed(0)} budget</span>}
+                                                <span className="flex items-center gap-0.5 text-gray-400"><FiMessageCircle size={10} /> comments</span>
                                             </p>
-                                            <span className={`flex-shrink-0 px-1.5 py-0.5 text-[10px] font-semibold rounded ${priorityCfg.bg} ${priorityCfg.text}`}>
-                                                {priorityCfg.label}
-                                            </span>
                                         </div>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            Due: {formatDate(task.dueDate)}
-                                            {task.taskBudget > 0 && <span className="ml-2 font-medium text-blue-600 dark:text-blue-400">${parseFloat(task.taskBudget).toFixed(0)} budget</span>}
-                                        </p>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-1 ml-2">
+                                        <button onClick={() => handlePriorityChange(task, 'up')} title="Increase priority" className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <FiChevronUp size={14} />
+                                        </button>
+                                        <button onClick={() => handlePriorityChange(task, 'down')} title="Decrease priority" className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <FiChevronDown size={14} />
+                                        </button>
+                                        <button onClick={() => handleEdit(task)} className="p-1 text-primary-600 hover:text-primary-700 dark:text-primary-400">
+                                            <FiEdit size={14} />
+                                        </button>
+                                        <button onClick={() => setDeleteModal({ isOpen: true, taskId: task.id, taskTitle: task.title })} className="p-1 text-red-600 hover:text-red-700 dark:text-red-400">
+                                            <FiTrash2 size={14} />
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-1 ml-2">
-                                    <button
-                                        onClick={() => handlePriorityChange(task, 'up')}
-                                        title="Increase priority"
-                                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                    >
-                                        <FiChevronUp size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => handlePriorityChange(task, 'down')}
-                                        title="Decrease priority"
-                                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                    >
-                                        <FiChevronDown size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleEdit(task)}
-                                        className="p-1 text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                                    >
-                                        <FiEdit size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteModal({ isOpen: true, taskId: task.id, taskTitle: task.title })}
-                                        className="p-1 text-red-600 hover:text-red-700 dark:text-red-400"
-                                    >
-                                        <FiTrash2 size={14} />
-                                    </button>
-                                </div>
+                                {/* Expandable Task Comments */}
+                                {expandedTaskId === task.id && (
+                                    <div className="px-3 pb-3 border-t border-gray-100 dark:border-gray-700">
+                                        <TaskComments
+                                            taskId={task.id}
+                                            userId={userData?.userId}
+                                            userName={`${userData?.firstName || ''} ${userData?.lastName || ''}`.trim()}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -297,24 +294,8 @@ const TaskList = ({ eventId }) => {
                 }
             >
                 <form onSubmit={handleSubmit}>
-                    <Input
-                        label="Task Title"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        error={errors.title}
-                        placeholder="Prepare invitations"
-                        required
-                    />
-                    <Input
-                        label="Due Date"
-                        type="date"
-                        name="dueDate"
-                        value={formData.dueDate}
-                        onChange={handleChange}
-                        error={errors.dueDate}
-                        required
-                    />
+                    <Input label="Task Title" name="title" value={formData.title} onChange={handleChange} error={errors.title} placeholder="Prepare invitations" required />
+                    <Input label="Due Date" type="date" name="dueDate" value={formData.dueDate} onChange={handleChange} error={errors.dueDate} required />
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
                         <select name="priority" value={formData.priority} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
@@ -323,19 +304,9 @@ const TaskList = ({ eventId }) => {
                             <option value="low">Low</option>
                         </select>
                     </div>
-                    <Input
-                        label="Task Budget ($) (optional)"
-                        type="number"
-                        name="taskBudget"
-                        value={formData.taskBudget}
-                        onChange={handleChange}
-                        placeholder="e.g. 200"
-                        min="0"
-                        step="0.01"
-                    />
+                    <Input label="Task Budget ($) (optional)" type="number" name="taskBudget" value={formData.taskBudget} onChange={handleChange} placeholder="e.g. 200" min="0" step="0.01" />
                 </form>
             </Modal>
-
 
             {/* Delete Modal */}
             <Modal
