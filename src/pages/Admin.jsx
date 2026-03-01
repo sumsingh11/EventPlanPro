@@ -272,7 +272,11 @@ const Admin = () => {
                                                 >
                                                     <FiEye size={12} /> View
                                                 </button>
-                                                <button onClick={() => handleDeleteEvent(event)} title="Delete event" className="flex items-center gap-1 px-2 py-1 text-xs rounded font-medium bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-300 transition-colors">
+                                                <button
+                                                    onClick={() => handleDeleteEvent(event)}
+                                                    title="Delete event"
+                                                    className="flex items-center gap-1 px-2 py-1 text-xs rounded font-medium bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-300 transition-colors"
+                                                >
                                                     <FiTrash2 size={12} /> Delete
                                                 </button>
                                             </div>

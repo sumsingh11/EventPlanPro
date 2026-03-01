@@ -47,25 +47,29 @@ export const createEvent = async (eventData, userId) => {
     }
 };
 
-// Get all events for a user
+// Get all events for a user — falls back to JS sort if the composite index isn't built yet
 export const getUserEvents = async (userId) => {
+    const COLLECTION = collection(db, EVENTS_COLLECTION);
     try {
-        const q = query(
-            collection(db, EVENTS_COLLECTION),
-            where('userId', '==', userId),
-            orderBy('date', 'desc')
-        );
-
+        const q = query(COLLECTION, where('userId', '==', userId), orderBy('date', 'desc'));
         const querySnapshot = await getDocs(q);
         const events = [];
-        querySnapshot.forEach((doc) => {
-            events.push({ id: doc.id, ...doc.data() });
-        });
-
+        querySnapshot.forEach((doc) => events.push({ id: doc.id, ...doc.data() }));
         return events;
-    } catch (error) {
-        console.error('Error fetching events:', error);
-        throw error;
+    } catch (indexError) {
+        // Likely "The query requires an index" — fall back to where-only + JS sort
+        console.warn('getUserEvents orderBy failed, falling back to JS sort:', indexError.message);
+        try {
+            const q2 = query(COLLECTION, where('userId', '==', userId));
+            const snapshot2 = await getDocs(q2);
+            const events = [];
+            snapshot2.forEach((doc) => events.push({ id: doc.id, ...doc.data() }));
+            // Sort descending by date in JS
+            return events.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            throw error;
+        }
     }
 };
 

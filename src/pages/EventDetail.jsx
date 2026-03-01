@@ -169,6 +169,9 @@ const EventDetail = () => {
     // Event accent colour for the colour band above tabs
     const accentColor = event.color || '#6366f1';
 
+    // True when an admin navigates to another user's event — all edit controls hidden
+    const isAdminViewing = userData?.role === 'admin' && event.userId !== userData?.userId;
+
     return (
         <div>
             {/* Header */}
@@ -199,6 +202,12 @@ const EventDetail = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
+                        {/* Read-only notice for admins viewing another user's event */}
+                        {isAdminViewing && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                                👁 Viewing as Admin — read-only
+                            </span>
+                        )}
                         {/* Print Summary */}
                         <Button
                             variant="secondary"
@@ -209,8 +218,8 @@ const EventDetail = () => {
                             <FiPrinter size={14} />
                             Print Summary
                         </Button>
-                        {/* Status action buttons */}
-                        {currentStatus === 'active' && (
+                        {/* Status action buttons — hidden for admin viewing another user's event */}
+                        {!isAdminViewing && currentStatus === 'active' && (
                             <>
                                 <Button
                                     variant="secondary"
@@ -232,7 +241,7 @@ const EventDetail = () => {
                                 </Button>
                             </>
                         )}
-                        {(currentStatus === 'completed' || currentStatus === 'cancelled') && (
+                        {!isAdminViewing && (currentStatus === 'completed' || currentStatus === 'cancelled') && (
                             <Button
                                 variant="secondary"
                                 size="small"
@@ -243,7 +252,7 @@ const EventDetail = () => {
                             </Button>
                         )}
 
-                        {activeTab === 'overview' && !editMode && currentStatus === 'active' && (
+                        {!isAdminViewing && activeTab === 'overview' && !editMode && currentStatus === 'active' && (
                             <Button variant="primary" onClick={handleEdit} className="flex items-center gap-2">
                                 <FiEdit size={16} />
                                 Edit Event

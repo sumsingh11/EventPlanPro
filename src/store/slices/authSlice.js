@@ -69,7 +69,14 @@ export const register = (userData) => async (dispatch) => {
     try {
         dispatch(setLoading(true));
         const result = await registerUser(userData);
-        const fullUserData = await getUserData(result.user.uid);
+        // Build userData directly from inputs — avoids Firestore read-race after setDoc
+        const fullUserData = {
+            userId: result.user.uid,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email,
+            role: userData.role || 'user',
+        };
         dispatch(setUser({ user: result.user, userData: fullUserData }));
         return { success: true };
     } catch (error) {
