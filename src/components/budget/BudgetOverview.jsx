@@ -69,9 +69,13 @@ const BudgetOverview = ({ eventId }) => {
 
     const paidTotal = expenses.filter(e => e.paidStatus).reduce((s, e) => s + (e.amount || 0), 0);
     const unpaidTotal = expenses.filter(e => !e.paidStatus).reduce((s, e) => s + (e.amount || 0), 0);
-    const budgetExceeded = budget && budget.totalBudget > 0 && (budget.totalSpent || 0) > budget.totalBudget;
-    const usedPercent = budget && budget.totalBudget > 0
-        ? Math.min(((budget.totalSpent || 0) / budget.totalBudget) * 100, 100)
+    // Use expenses-derived totalSpent as the single source of truth (budget.totalSpent in Firestore
+    // may lag — this is always accurate since expenses are in Redux state already)
+    const computedTotalBudget = budget ? Math.round((budget.totalBudget || 0) * 100) / 100 : 0;
+    const computedRemainingBudget = computedTotalBudget - totalSpent;
+    const budgetExceeded = computedTotalBudget > 0 && totalSpent > computedTotalBudget;
+    const usedPercent = computedTotalBudget > 0
+        ? Math.min((totalSpent / computedTotalBudget) * 100, 100)
         : 0;
 
     // ── Handlers ─────────────────────────────────────────────────────────
@@ -195,7 +199,7 @@ const BudgetOverview = ({ eventId }) => {
                             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
                                 <FiAlertCircle className="text-red-600 dark:text-red-400 flex-shrink-0" size={20} />
                                 <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                                    ⚠️ Budget exceeded by ${Math.abs(budget.remainingBudget || 0).toFixed(2)}! Consider adjusting expenses or increasing the budget.
+                                    ⚠️ Budget exceeded by ${Math.abs(computedRemainingBudget).toFixed(2)}! Total spent ${totalSpent.toFixed(2)} exceeds your ${computedTotalBudget.toFixed(2)} budget.
                                 </p>
                             </div>
                         )}
@@ -204,16 +208,16 @@ const BudgetOverview = ({ eventId }) => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
                             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Budget</p>
-                                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">${(budget.totalBudget || 0).toFixed(2)}</p>
+                                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">${computedTotalBudget.toFixed(2)}</p>
                             </div>
                             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Spent</p>
-                                <p className="text-xl font-bold text-red-500">${(budget.totalSpent || 0).toFixed(2)}</p>
+                                <p className={`text-xl font-bold ${budgetExceeded ? 'text-red-500' : 'text-gray-900 dark:text-gray-100'}`}>${totalSpent.toFixed(2)}</p>
                             </div>
                             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Remaining</p>
-                                <p className={`text-xl font-bold ${(budget.remainingBudget || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    ${(budget.remainingBudget || 0).toFixed(2)}
+                                <p className={`text-xl font-bold ${computedRemainingBudget >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    ${computedRemainingBudget.toFixed(2)}
                                 </p>
                             </div>
                             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
