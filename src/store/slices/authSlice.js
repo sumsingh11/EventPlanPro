@@ -103,13 +103,22 @@ export const googleLogin = () => async (dispatch) => {
 
 export const fetchUserData = (userId) => async (dispatch) => {
     try {
-        const userData = await getUserData(userId);
+        // Retry up to 5x with 500ms delays — handles the race where onAuthStateChanged
+        // fires immediately after createUserWithEmailAndPassword but before setDoc completes
+        let userData = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+            userData = await getUserData(userId);
+            if (userData) break;
+            await new Promise(r => setTimeout(r, 500));
+        }
+
         if (!userData) {
-            // User exists in Auth but not in Firestore (e.g. after DB wipe) — force logout
+            // Still no doc after retries — Auth account exists but was never registered properly
             await logoutUser();
             dispatch(setUser(null));
             return { success: false, error: 'Account not found. Please register.' };
         }
+
         dispatch(setUser({ user: { uid: userId }, userData }));
         return { success: true };
     } catch (error) {

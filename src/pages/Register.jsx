@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { register, googleLogin } from '../store/slices/authSlice';
 import { showNotification } from '../store/slices/notificationSlice';
 import { FcGoogle } from 'react-icons/fc';
