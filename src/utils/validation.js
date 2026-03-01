@@ -27,17 +27,22 @@ export const validateDate = (dateString) => {
 };
 
 export const validateFutureDate = (dateString) => {
-    // Allow today and any future date (date-only comparison)
+    // Allow today and any future date (date-only, local timezone)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const date = new Date(dateString + 'T00:00:00');
+    // Parse as local time by splitting components
+    const [y, m, d] = dateString.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
     return date >= today;
 };
 
-// Validate that a date+time combination is in the future
+// Validate that a date+time combination is in the future (always local timezone)
 export const validateFutureDatetime = (dateString, timeString) => {
     if (!dateString || !timeString) return false;
-    const eventDateTime = new Date(`${dateString}T${timeString}`);
+    // Parse components individually to guarantee local time interpretation
+    const [y, mo, d] = dateString.split('-').map(Number);
+    const [h, mi] = timeString.split(':').map(Number);
+    const eventDateTime = new Date(y, mo - 1, d, h, mi);
     return eventDateTime > new Date();
 };
 
