@@ -6,7 +6,7 @@ import { FiClock } from 'react-icons/fi';
  * variant="full"    → large block with days/hours/min/sec boxes (EventDetail)
  * variant="compact" → single-line badge (Dashboard cards)
  */
-const CountdownTimer = ({ date, time, variant = 'full' }) => {
+const CountdownTimer = ({ date, time, variant = 'full', color = null }) => {
     const [timeLeft, setTimeLeft] = useState(null);
 
     const computeTimeLeft = () => {
@@ -77,17 +77,26 @@ const CountdownTimer = ({ date, time, variant = 'full' }) => {
         { label: 'Seconds', value: timeLeft.seconds },
     ];
 
+    // If a custom event colour is given, use it directly; otherwise fall back to urgency gradient
+    const boxStyle = color
+        ? { background: `linear-gradient(135deg, ${color}cc, ${color})` }
+        : null;
+    const boxClass = color
+        ? 'flex flex-col items-center justify-center py-3 rounded-xl text-white shadow'
+        : `flex flex-col items-center justify-center py-3 rounded-xl bg-gradient-to-br ${urgency} text-white shadow`;
+
     return (
         <div>
             <div className="flex items-center gap-2 mb-3">
-                <FiClock className="text-blue-500" size={16} />
+                <FiClock size={16} style={color ? { color } : undefined} className={color ? '' : 'text-blue-500'} />
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Event Countdown</span>
             </div>
             <div className="grid grid-cols-4 gap-3">
                 {units.map(({ label, value }) => (
                     <div
                         key={label}
-                        className={`flex flex-col items-center justify-center py-3 rounded-xl bg-gradient-to-br ${urgency} text-white shadow`}
+                        className={boxClass}
+                        style={boxStyle || undefined}
                     >
                         <span className="text-2xl font-bold tabular-nums leading-none">
                             {String(value).padStart(2, '0')}

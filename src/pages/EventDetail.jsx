@@ -462,7 +462,7 @@ const EventDetail = () => {
 
                                 {/* Countdown Timer */}
                                 <div className="pt-2">
-                                    <CountdownTimer date={event.date} time={event.time} variant="full" />
+                                    <CountdownTimer date={event.date} time={event.time} variant="full" color={event.color || null} />
                                 </div>
 
                                 {/* Tags display */}
