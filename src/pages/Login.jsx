@@ -72,7 +72,7 @@ const Login = () => {
         }
     };
 
-    /* ── Decorative floating shapes for the hero panel ───────────────── */
+    /* Decorative floating shapes for the hero panel */
     const shapes = [
         { emoji: '🎉', top: '8%', left: '10%', size: '3rem', rotate: '-15deg', delay: '0s' },
         { emoji: '📅', top: '18%', left: '70%', size: '2.4rem', rotate: '10deg', delay: '0.4s' },
@@ -87,7 +87,7 @@ const Login = () => {
     return (
         <div className="min-h-screen flex flex-col lg:flex-row">
 
-            {/* ── LEFT PANEL — Hero / Brand ─────────────────────────────── */}
+            {/* LEFT PANEL — Hero / Brand */}
             <div
                 className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col items-center justify-center px-12 py-16"
                 style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%)' }}
@@ -128,7 +128,7 @@ const Login = () => {
                 </div>
             </div>
 
-            {/* ── RIGHT PANEL — Form ───────────────────────────────────── */}
+            {/* RIGHT PANEL — Form */}
             <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-gray-950 px-6 py-12">
                 <div className="w-full max-w-md">
 

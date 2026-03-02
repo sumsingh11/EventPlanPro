@@ -26,7 +26,7 @@ const BudgetOverview = ({ eventId }) => {
     const { userData } = useSelector(state => state.auth);
     const { budget, expenses } = useSelector(state => state.budget);
 
-    // ── Local UI state ──────────────────────────────────────────────────
+    // Local UI state 
     const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState(null);
@@ -36,7 +36,7 @@ const BudgetOverview = ({ eventId }) => {
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, expenseId: null, expenseCategory: '' });
     const [saving, setSaving] = useState(false);
 
-    // ── Self-sufficient data loading ─────────────────────────────────────
+    // Self-sufficient data loading 
     const loadBudget = useCallback(async () => {
         if (!eventId || !userData?.userId) return;
         await dispatch(fetchEventBudget(eventId, userData.userId));
@@ -50,7 +50,7 @@ const BudgetOverview = ({ eventId }) => {
         if (budget) setBudgetAmount(budget.totalBudget.toString());
     }, [budget]);
 
-    // ── Derived chart data ───────────────────────────────────────────────
+    // Derived chart data 
     const categoryData = expenses.reduce((acc, exp) => {
         const cat = exp.category || 'Other';
         acc[cat] = (acc[cat] || 0) + (exp.amount || 0);
@@ -71,6 +71,7 @@ const BudgetOverview = ({ eventId }) => {
     const unpaidTotal = expenses.filter(e => !e.paidStatus).reduce((s, e) => s + (e.amount || 0), 0);
     // Use expenses-derived totalSpent as the single source of truth (budget.totalSpent in Firestore
     // may lag — this is always accurate since expenses are in Redux state already)
+
     const computedTotalBudget = budget ? Math.round((budget.totalBudget || 0) * 100) / 100 : 0;
     const computedRemainingBudget = computedTotalBudget - totalSpent;
     const budgetExceeded = computedTotalBudget > 0 && totalSpent > computedTotalBudget;
@@ -78,7 +79,7 @@ const BudgetOverview = ({ eventId }) => {
         ? Math.min((totalSpent / computedTotalBudget) * 100, 100)
         : 0;
 
-    // ── Handlers ─────────────────────────────────────────────────────────
+    //  Handlers 
     const handleSetBudget = async (e) => {
         if (e?.preventDefault) e.preventDefault();
         if (!validatePositiveNumber(budgetAmount)) {
@@ -178,7 +179,7 @@ const BudgetOverview = ({ eventId }) => {
         setDeleteModal({ isOpen: false, expenseId: null, expenseCategory: '' });
     };
 
-    // ── Render ────────────────────────────────────────────────────────────
+    // Rendering
     return (
         <div className="space-y-6">
 

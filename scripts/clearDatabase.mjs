@@ -12,7 +12,7 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 
-// ── 1.  Point this at your service-account JSON ─────────────────────────────
+// 1.  Point this at your service-account JSON 
 //  Download from Firebase Console → Project Settings → Service Accounts →
 //  "Generate new private key"  and save as scripts/serviceAccount.json
 import serviceAccount from './serviceAccount.json' assert { type: 'json' };
@@ -20,7 +20,7 @@ import serviceAccount from './serviceAccount.json' assert { type: 'json' };
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 
-// ── 2.  Collections to wipe ──────────────────────────────────────────────────
+// 2.  Collections to wipe 
 const COLLECTIONS = [
     'events',
     'guests',
@@ -61,6 +61,7 @@ async function deleteCollection(name) {
 async function main() {
     console.log('\n🗑️  EventPlanPro — Database Cleanup\n');
     console.log('⚠️  This will permanently delete all data. Ctrl+C to abort.\n');
+    
     // Give 3 seconds to abort
     await new Promise(r => setTimeout(r, 3000));
 

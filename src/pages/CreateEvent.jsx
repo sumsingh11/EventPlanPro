@@ -10,6 +10,7 @@ import { validateRequired, validateFutureDate, validateFutureDatetime } from '..
 import { SUCCESS_MESSAGES } from '../utils/notifications';
 import { FiUpload, FiX, FiCheck } from 'react-icons/fi';
 
+// Predefined options for event types, colors, and tags
 const EVENT_TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Corporate Event', 'Party', 'Conference', 'Other'];
 
 const EVENT_COLORS = [

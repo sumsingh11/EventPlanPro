@@ -24,6 +24,7 @@ const EventMedia = ({ eventId, userId }) => {
         setLoading(true);
         try {
             const mediaRef = collection(db, 'events', eventId, 'media');
+            
             // orderBy requires a Firestore index; use a simple getDocs fallback
             let snapshot;
             try {

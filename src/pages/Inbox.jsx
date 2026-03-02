@@ -18,6 +18,7 @@ const Inbox = () => {
             setLoading(false);
 
             if (ann) {
+                
                 // Check if this specific announcement has been read
                 const readTimestamp = localStorage.getItem(STORAGE_KEY);
                 setIsRead(readTimestamp === ann.updatedAt);

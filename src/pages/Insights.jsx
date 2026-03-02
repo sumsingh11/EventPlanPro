@@ -54,6 +54,7 @@ const Insights = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { userData } = useSelector(state => state.auth);
+
     // Use raw events list — not filtered by search/tab/sort from dashboard state
     const events = useSelector(state => state.events.events);
 
@@ -79,7 +80,7 @@ const Insights = () => {
 
     if (loading) return <Loading text="Loading insights..." />;
 
-    // ── Derived stats ────────────────────────────────────────────────────
+    // Derived stats 
     const totalEvents = events.length;
     const activeEvents = events.filter(e => e.status === 'active').length;
     const completedTasks = tasks.filter(t => t.status === 'completed' || t.completed).length;
